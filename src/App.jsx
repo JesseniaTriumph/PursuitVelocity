@@ -5,7 +5,19 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-// Add page imports here
+import Layout from './components/Layout';
+import Feed from './pages/Feed';
+import CreatePost from './pages/CreatePost';
+import PostDetail from './pages/PostDetail';
+import Explore from './pages/Explore';
+import CoBuild from './pages/CoBuild';
+import CreateProject from './pages/CreateProject';
+import ProjectDetail from './pages/ProjectDetail';
+import Events from './pages/Events';
+import CreateEvent from './pages/CreateEvent';
+import EventDetail from './pages/EventDetail';
+import Profile from './pages/Profile';
+import EditProfile from './pages/EditProfile';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -33,8 +45,22 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
-      {/* Add your page Route elements here */}
-      <Route path="*" element={<PageNotFound />} />
+      <Route element={<Layout />}>
+        <Route path="/" element={<Feed />} />
+        <Route path="/create" element={<CreatePost />} />
+        <Route path="/post/:id" element={<PostDetail />} />
+        <Route path="/explore" element={<Explore />} />
+        <Route path="/co-build" element={<CoBuild />} />
+        <Route path="/create-project" element={<CreateProject />} />
+        <Route path="/project/:id" element={<ProjectDetail />} />
+        <Route path="/events" element={<Events />} />
+        <Route path="/create-event" element={<CreateEvent />} />
+        <Route path="/event/:id" element={<EventDetail />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/profile/:email" element={<Profile />} />
+        <Route path="/edit-profile" element={<EditProfile />} />
+        <Route path="*" element={<PageNotFound />} />
+      </Route>
     </Routes>
   );
 };
