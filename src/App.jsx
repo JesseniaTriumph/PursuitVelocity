@@ -18,6 +18,7 @@ import CreateEvent from './pages/CreateEvent';
 import EventDetail from './pages/EventDetail';
 import Profile from './pages/Profile';
 import EditProfile from './pages/EditProfile';
+import Onboarding from './pages/Onboarding';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -61,6 +62,7 @@ const AuthenticatedApp = () => {
         <Route path="/edit-profile" element={<EditProfile />} />
         <Route path="*" element={<PageNotFound />} />
       </Route>
+      <Route path="/onboarding" element={<Onboarding />} />
     </Routes>
   );
 };

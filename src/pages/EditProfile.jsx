@@ -1,9 +1,23 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Loader2, Camera, X } from "lucide-react";
+import { ArrowLeft, Loader2, Camera, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import useCurrentUser from "../hooks/useCurrentUser";
+
+const ALL_SKILLS = ["React", "Node.js", "Python", "AI/ML", "Design", "Backend", "Frontend", "Mobile", "Data", "DevOps", "Java", "Product"];
+const ALL_INTERESTS = ["Startups", "AI", "Social Impact", "EdTech", "FinTech", "Games", "Web3", "Health", "Education", "Sustainability"];
+const LOOKING_FOR_OPTIONS = [
+  { id: "build_own_project", label: "🚀 Build my own project" },
+  { id: "join_project", label: "🤝 Join a project" },
+  { id: "collaborate", label: "🧩 Find collaborators" },
+  { id: "learn", label: "📚 Learn & grow" },
+];
+const NEEDS_OPTIONS = [
+  { id: "teammates", label: "👥 Teammates" },
+  { id: "experience", label: "💼 Experience" },
+  { id: "guidance", label: "🧠 Guidance" },
+];
 
 export default function EditProfile() {
   const navigate = useNavigate();
@@ -11,135 +25,146 @@ export default function EditProfile() {
   const fileInputRef = useRef(null);
   const [bio, setBio] = useState("");
   const [skills, setSkills] = useState([]);
-  const [skillInput, setSkillInput] = useState("");
+  const [interests, setInterests] = useState([]);
+  const [goals, setGoals] = useState([]);
+  const [lookingFor, setLookingFor] = useState([]);
+  const [needs, setNeeds] = useState([]);
+  const [birthday, setBirthday] = useState("");
   const [avatar, setAvatar] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
+  const [customSkill, setCustomSkill] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (user) {
       setBio(user.bio || "");
       setSkills(user.skills || []);
+      setInterests(user.interests || []);
+      setGoals(user.goals || []);
+      setLookingFor(user.looking_for || []);
+      setNeeds(user.needs || []);
+      setBirthday(user.birthday || "");
       setAvatarPreview(user.avatar || null);
     }
   }, [user]);
 
-  const handleAvatarSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setAvatar(file);
-      setAvatarPreview(URL.createObjectURL(file));
-    }
+  const toggle = (arr, setArr, item) => {
+    setArr((prev) => prev.includes(item) ? prev.filter((x) => x !== item) : [...prev, item]);
   };
 
-  const addSkill = (skill) => {
-    const clean = skill.trim();
-    if (clean && !skills.includes(clean)) {
-      setSkills((prev) => [...prev, clean]);
-    }
-    setSkillInput("");
+  const handleAvatarSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (file) { setAvatar(file); setAvatarPreview(URL.createObjectURL(file)); }
   };
 
   const handleSubmit = async () => {
     if (!user) return;
     setSubmitting(true);
-
     let avatarUrl = user.avatar || "";
     if (avatar) {
       const result = await base44.integrations.Core.UploadFile({ file: avatar });
       avatarUrl = result.file_url;
     }
-
-    await base44.auth.updateMe({
-      bio,
-      skills,
-      avatar: avatarUrl,
-    });
-
+    await base44.auth.updateMe({ bio, skills, interests, goals, looking_for: lookingFor, needs, birthday, avatar: avatarUrl, onboarded: true });
     navigate("/profile");
   };
 
   if (userLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-6 h-6 animate-spin text-primary" />
-      </div>
-    );
+    return <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
   }
 
   return (
-    <div className="px-4 py-4 space-y-5">
+    <div className="px-4 py-4 space-y-6">
       <div className="flex items-center gap-3">
-        <Link to="/profile" className="text-muted-foreground">
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
+        <Link to="/profile" className="text-muted-foreground"><ArrowLeft className="w-5 h-5" /></Link>
         <h1 className="font-space font-bold text-lg">Edit Profile</h1>
       </div>
 
-      <div className="space-y-5">
-        {/* Avatar */}
-        <div className="flex justify-center">
-          <div className="relative">
-            <div className="w-24 h-24 rounded-2xl bg-primary/10 flex items-center justify-center overflow-hidden">
-              {avatarPreview ? (
-                <img src={avatarPreview} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-primary font-bold text-3xl font-space">
-                  {user?.full_name?.[0] || "?"}
-                </span>
-              )}
-            </div>
-            <input type="file" ref={fileInputRef} onChange={handleAvatarSelect} accept="image/*" className="hidden" />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg"
-            >
-              <Camera className="w-4 h-4" />
-            </button>
+      {/* Avatar */}
+      <div className="flex justify-center">
+        <div className="relative">
+          <div className="w-24 h-24 rounded-2xl bg-primary/10 flex items-center justify-center overflow-hidden">
+            {avatarPreview ? (
+              <img src={avatarPreview} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-primary font-bold text-3xl font-space">{user?.full_name?.[0] || "?"}</span>
+            )}
           </div>
+          <input type="file" ref={fileInputRef} onChange={handleAvatarSelect} accept="image/*" className="hidden" />
+          <button onClick={() => fileInputRef.current?.click()} className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg">
+            <Camera className="w-4 h-4" />
+          </button>
         </div>
-
-        {/* Bio */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Bio</label>
-          <textarea
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            placeholder="Tell people about yourself..."
-            className="w-full bg-muted rounded-xl px-4 py-3 text-sm min-h-[80px] resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
-          />
-        </div>
-
-        {/* Skills */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Skills</label>
-          <input
-            value={skillInput}
-            onChange={(e) => setSkillInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") { e.preventDefault(); addSkill(skillInput); }
-            }}
-            placeholder="Add a skill..."
-            className="w-full bg-muted rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-          />
-          {skills.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {skills.map((s) => (
-                <span key={s} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                  {s}
-                  <button onClick={() => setSkills((prev) => prev.filter((x) => x !== s))}>
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <Button onClick={handleSubmit} disabled={submitting} className="w-full rounded-xl">
-          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Profile"}
-        </Button>
       </div>
+
+      {/* Bio */}
+      <div className="space-y-2">
+        <label className="text-sm font-semibold">Bio</label>
+        <textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell people about yourself and what you're building..." className="w-full bg-muted rounded-xl px-4 py-3 text-sm min-h-[80px] resize-none focus:outline-none focus:ring-2 focus:ring-primary/20" />
+      </div>
+
+      {/* Birthday */}
+      <div className="space-y-2">
+        <label className="text-sm font-semibold">Birthday (optional) 🎂</label>
+        <input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} className="w-full bg-muted rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+      </div>
+
+      {/* Skills */}
+      <div className="space-y-2">
+        <label className="text-sm font-semibold">Skills</label>
+        <div className="flex flex-wrap gap-2">
+          {ALL_SKILLS.map((s) => (
+            <button key={s} onClick={() => toggle(skills, setSkills, s)} className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${skills.includes(s) ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+              {skills.includes(s) && <Check className="inline w-3 h-3 mr-1" />}{s}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <input value={customSkill} onChange={(e) => setCustomSkill(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (customSkill.trim()) { toggle(skills, setSkills, customSkill.trim()); setCustomSkill(""); } } }} placeholder="Add custom skill..." className="flex-1 bg-muted rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20" />
+        </div>
+      </div>
+
+      {/* Interests */}
+      <div className="space-y-2">
+        <label className="text-sm font-semibold">Interests</label>
+        <div className="flex flex-wrap gap-2">
+          {ALL_INTERESTS.map((s) => (
+            <button key={s} onClick={() => toggle(interests, setInterests, s)} className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${interests.includes(s) ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"}`}>
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Looking For */}
+      <div className="space-y-2">
+        <label className="text-sm font-semibold">What are you here for?</label>
+        <div className="space-y-2">
+          {LOOKING_FOR_OPTIONS.map((opt) => (
+            <button key={opt.id} onClick={() => toggle(lookingFor, setLookingFor, opt.id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all border ${lookingFor.includes(opt.id) ? "border-primary bg-primary/5 text-foreground" : "border-transparent bg-muted text-muted-foreground"}`}>
+              {opt.label}
+              {lookingFor.includes(opt.id) && <Check className="ml-auto w-4 h-4 text-primary" />}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Needs */}
+      <div className="space-y-2">
+        <label className="text-sm font-semibold">What do you need?</label>
+        <div className="space-y-2">
+          {NEEDS_OPTIONS.map((opt) => (
+            <button key={opt.id} onClick={() => toggle(needs, setNeeds, opt.id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all border ${needs.includes(opt.id) ? "border-primary bg-primary/5 text-foreground" : "border-transparent bg-muted text-muted-foreground"}`}>
+              {opt.label}
+              {needs.includes(opt.id) && <Check className="ml-auto w-4 h-4 text-primary" />}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <Button onClick={handleSubmit} disabled={submitting} className="w-full rounded-xl">
+        {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Profile"}
+      </Button>
     </div>
   );
 }

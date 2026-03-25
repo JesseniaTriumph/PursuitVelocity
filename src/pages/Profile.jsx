@@ -3,10 +3,24 @@ import { useParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import PostCard from "../components/PostCard";
 import EmptyState from "../components/EmptyState";
-import { Settings, Newspaper, Users, Loader2, LogOut, UserPlus, UserMinus } from "lucide-react";
+import { Settings, Newspaper, Loader2, LogOut, UserPlus, UserMinus, Target, Sparkles, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import useCurrentUser from "../hooks/useCurrentUser";
 import { motion } from "framer-motion";
+import moment from "moment";
+
+const lookingForLabels = {
+  build_own_project: "🚀 Building own project",
+  join_project: "🤝 Looking to join project",
+  collaborate: "🧩 Finding collaborators",
+  learn: "📚 Learning & growing",
+};
+
+const needsLabels = {
+  teammates: "👥 Teammates",
+  experience: "💼 Experience",
+  guidance: "🧠 Guidance",
+};
 
 export default function Profile() {
   const { email } = useParams();
@@ -33,7 +47,6 @@ export default function Profile() {
         base44.entities.Follow.filter({ following_email: targetEmail }),
         base44.entities.Follow.filter({ follower_email: targetEmail }),
       ]);
-
       setPosts(userPosts);
       setFollowers(followersData);
       setFollowing(followingData);
@@ -56,7 +69,6 @@ export default function Profile() {
         setLikes(userLikes);
         setSaved(userSaved);
       }
-
       setLoading(false);
     };
     load();
@@ -107,6 +119,8 @@ export default function Profile() {
     }
   };
 
+  const isBirthday = profileUser?.birthday && moment(profileUser.birthday, "MM-DD").format("MM-DD") === moment().format("MM-DD");
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -117,42 +131,77 @@ export default function Profile() {
 
   return (
     <div className="pb-4">
+      {/* Birthday Banner */}
+      {isBirthday && (
+        <div className="mx-4 mt-4 p-3 bg-chart-4/10 rounded-2xl flex items-center gap-2">
+          <Gift className="w-4 h-4 text-chart-4" />
+          <span className="text-sm font-medium">🎉 It's {isOwnProfile ? "your" : `${profileUser?.full_name?.split(" ")[0]}'s`} birthday!</span>
+        </div>
+      )}
+
       {/* Profile Header */}
       <div className="px-4 py-6 space-y-4">
         <div className="flex items-start gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center overflow-hidden">
+          <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center overflow-hidden">
             {profileUser?.avatar ? (
               <img src={profileUser.avatar} alt="" className="w-full h-full object-cover" />
             ) : (
-              <span className="text-primary font-bold text-2xl font-space">
-                {profileUser?.full_name?.[0] || "?"}
-              </span>
+              <span className="text-primary font-bold text-3xl font-space">{profileUser?.full_name?.[0] || "?"}</span>
             )}
           </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="font-space font-bold text-lg">{profileUser?.full_name || "User"}</h1>
-            <p className="text-xs text-muted-foreground">{profileUser?.email}</p>
-            {profileUser?.bio && (
-              <p className="text-sm mt-1 text-muted-foreground">{profileUser.bio}</p>
-            )}
+          <div className="flex-1 min-w-0 pt-1">
+            <h1 className="font-space font-bold text-xl">{profileUser?.full_name || "User"}</h1>
+            {profileUser?.bio && <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{profileUser.bio}</p>}
           </div>
         </div>
 
         {/* Stats */}
         <div className="flex items-center gap-6">
-          <div className="text-center">
-            <span className="font-bold text-sm">{posts.length}</span>
-            <span className="text-xs text-muted-foreground ml-1">posts</span>
-          </div>
-          <div className="text-center">
-            <span className="font-bold text-sm">{followers.length}</span>
-            <span className="text-xs text-muted-foreground ml-1">followers</span>
-          </div>
-          <div className="text-center">
-            <span className="font-bold text-sm">{following.length}</span>
-            <span className="text-xs text-muted-foreground ml-1">following</span>
-          </div>
+          <div><span className="font-bold text-sm">{posts.length}</span><span className="text-xs text-muted-foreground ml-1">posts</span></div>
+          <div><span className="font-bold text-sm">{followers.length}</span><span className="text-xs text-muted-foreground ml-1">followers</span></div>
+          <div><span className="font-bold text-sm">{following.length}</span><span className="text-xs text-muted-foreground ml-1">following</span></div>
         </div>
+
+        {/* Skills */}
+        {profileUser?.skills?.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {profileUser.skills.map((s) => (
+              <span key={s} className="text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary font-medium">{s}</span>
+            ))}
+          </div>
+        )}
+
+        {/* Looking For */}
+        {profileUser?.looking_for?.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+              <Target className="w-3 h-3" /> Looking For
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {profileUser.looking_for.map((lf) => (
+                <span key={lf} className="text-xs px-2.5 py-1 rounded-full bg-accent/10 text-accent font-medium">
+                  {lookingForLabels[lf] || lf}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Needs */}
+        {profileUser?.needs?.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+              <Sparkles className="w-3 h-3" /> Needs
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {profileUser.needs.map((n) => (
+                <span key={n} className="text-xs px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground font-medium">
+                  {needsLabels[n] || n}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Actions */}
         {isOwnProfile ? (
@@ -162,12 +211,7 @@ export default function Profile() {
                 <Settings className="w-4 h-4" /> Edit Profile
               </Button>
             </Link>
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-xl"
-              onClick={() => base44.auth.logout()}
-            >
+            <Button variant="outline" size="sm" className="rounded-xl" onClick={() => base44.auth.logout()}>
               <LogOut className="w-4 h-4" />
             </Button>
           </div>
@@ -185,15 +229,15 @@ export default function Profile() {
 
       {/* Tabs */}
       <div className="flex border-b border-border/50 px-4">
-        {["posts", "saved"].map((tab) => (
+        {["posts", ...(isOwnProfile ? ["saved"] : [])].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-3 text-sm font-medium text-center transition-colors relative ${
+            className={`flex-1 py-3 text-sm font-medium text-center transition-colors relative capitalize ${
               activeTab === tab ? "text-foreground" : "text-muted-foreground"
             }`}
           >
-            {tab === "posts" ? "Posts" : "Saved"}
+            {tab}
             {activeTab === tab && (
               <motion.div layoutId="profile-tab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
             )}
@@ -221,13 +265,7 @@ export default function Profile() {
           )
         )}
         {activeTab === "saved" && isOwnProfile && (
-          <SavedPosts
-            saved={saved}
-            currentUserEmail={currentUser?.email}
-            likes={likes}
-            onLikeToggle={handleLikeToggle}
-            onSaveToggle={handleSaveToggle}
-          />
+          <SavedPosts saved={saved} currentUserEmail={currentUser?.email} likes={likes} onLikeToggle={handleLikeToggle} onSaveToggle={handleSaveToggle} />
         )}
       </div>
     </div>
@@ -240,11 +278,7 @@ function SavedPosts({ saved, currentUserEmail, likes, onLikeToggle, onSaveToggle
 
   useEffect(() => {
     const load = async () => {
-      if (saved.length === 0) {
-        setPosts([]);
-        setLoading(false);
-        return;
-      }
+      if (saved.length === 0) { setPosts([]); setLoading(false); return; }
       const allPosts = await base44.entities.Post.list("-created_date", 100);
       const savedIds = new Set(saved.map((s) => s.post_id));
       setPosts(allPosts.filter((p) => savedIds.has(p.id)));
@@ -253,27 +287,10 @@ function SavedPosts({ saved, currentUserEmail, likes, onLikeToggle, onSaveToggle
     load();
   }, [saved]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-10">
-        <Loader2 className="w-5 h-5 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (posts.length === 0) {
-    return <EmptyState icon={Newspaper} title="No saved posts" description="Save posts to find them here later" />;
-  }
+  if (loading) return <div className="flex items-center justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>;
+  if (posts.length === 0) return <EmptyState icon={Newspaper} title="No saved posts" description="Save posts to find them here later" />;
 
   return posts.map((post) => (
-    <PostCard
-      key={post.id}
-      post={post}
-      currentUserEmail={currentUserEmail}
-      isLiked={likes.some((l) => l.post_id === post.id)}
-      isSaved={true}
-      onLikeToggle={onLikeToggle}
-      onSaveToggle={onSaveToggle}
-    />
+    <PostCard key={post.id} post={post} currentUserEmail={currentUserEmail} isLiked={likes.some((l) => l.post_id === post.id)} isSaved={true} onLikeToggle={onLikeToggle} onSaveToggle={onSaveToggle} />
   ));
 }
