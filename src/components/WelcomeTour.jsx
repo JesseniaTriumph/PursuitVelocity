@@ -22,7 +22,7 @@ const STEPS = [
   {
     icon: LayoutDashboard,
     color: "bg-primary/10 text-primary",
-    title: "Welcome to Fellowship",
+    title: "Welcome to Velocity",
     body: "Your home for building in public. Share progress, find teammates, and connect with like-minded builders — all in one place.",
     cta: "Let's walk through it",
   },
