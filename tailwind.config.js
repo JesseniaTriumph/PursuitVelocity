@@ -1,18 +1,36 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-    darkMode: ["class"],
+    darkMode: ["class", '[data-theme="dark"]'],
     content: ["./index.html", "./src/**/*.{ts,tsx,js,jsx}"],
   theme: {
   	extend: {
       fontFamily: {
-        inter: ['var(--font-inter)'],
-        space: ['var(--font-space)'],
+        'dm-sans': ['var(--font-dm-sans)'],
+        'dm-mono': ['var(--font-dm-mono)'],
+        // legacy aliases
+        inter: ['var(--font-dm-sans)'],
+        space: ['var(--font-dm-sans)'],
+      },
+      spacing: {
+        '0': '0px', '1': '4px', '2': '8px', '3': '12px', '4': '16px',
+        '5': '20px', '6': '24px', '8': '32px', '10': '40px', '12': '48px',
+        '16': '64px', '20': '80px', '24': '96px',
       },
   		borderRadius: {
-  			lg: 'var(--radius)',
-  			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
+  			sm: '4px',
+  			md: '8px',
+  			lg: '12px',
+  			xl: '16px',
+  			'2xl': '24px',
+  			full: '9999px',
   		},
+      boxShadow: {
+        xs: 'var(--shadow-xs)',
+        sm: 'var(--shadow-sm)',
+        md: 'var(--shadow-md)',
+        lg: 'var(--shadow-lg)',
+        xl: 'var(--shadow-xl)',
+      },
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
@@ -38,7 +56,8 @@ module.exports = {
   			},
   			accent: {
   				DEFAULT: 'hsl(var(--accent))',
-  				foreground: 'hsl(var(--accent-foreground))'
+  				foreground: 'hsl(var(--accent-foreground))',
+          subtle: 'hsl(var(--accent-subtle))'
   			},
   			destructive: {
   				DEFAULT: 'hsl(var(--destructive))',
@@ -47,12 +66,13 @@ module.exports = {
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',
+        tertiary: 'hsl(var(--tertiary))',
   			chart: {
-  				'1': 'hsl(var(--chart-1))',
-  				'2': 'hsl(var(--chart-2))',
-  				'3': 'hsl(var(--chart-3))',
-  				'4': 'hsl(var(--chart-4))',
-  				'5': 'hsl(var(--chart-5))'
+  				'1': 'hsl(var(--primary))',
+  				'2': 'hsl(var(--accent))',
+  				'3': 'hsl(var(--destructive))',
+  				'4': 'hsl(var(--warning))',
+  				'5': 'hsl(var(--info))'
   			},
   			sidebar: {
   				DEFAULT: 'hsl(var(--sidebar-background))',
