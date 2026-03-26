@@ -5,11 +5,11 @@ module.exports = {
   theme: {
   	extend: {
       fontFamily: {
-        'dm-sans': ['var(--font-dm-sans)'],
-        'dm-mono': ['var(--font-dm-mono)'],
-        // legacy aliases
-        inter: ['var(--font-dm-sans)'],
-        space: ['var(--font-dm-sans)'],
+        inter: ['var(--font-inter)', 'sans-serif'],
+        space: ['var(--font-space)', 'sans-serif'],
+        // keep dm-sans aliases so existing components don't break
+        'dm-sans': ['var(--font-inter)', 'sans-serif'],
+        'dm-mono': ['var(--font-dm-mono)', 'monospace'],
       },
       spacing: {
         '0': '0px', '1': '4px', '2': '8px', '3': '12px', '4': '16px',
