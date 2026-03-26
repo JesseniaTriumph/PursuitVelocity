@@ -141,6 +141,9 @@ function normalizeBuilder(builder) {
     github_url: builder?.github_url || null,
     linkedin_url: builder?.linkedin_url || null,
     calendly_url: builder?.calendly_url || null,
+    portfolio_url: builder?.portfolio_url || null,
+    x_url: builder?.x_url || null,
+    resume_url: builder?.resume_url || null,
     availability: builder?.availability || "selective",
     goal:
       builder?.goal ||

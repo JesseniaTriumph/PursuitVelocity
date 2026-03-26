@@ -195,7 +195,7 @@ export default function Profile() {
           </h1>
           {(profileUser?.cohort || profileUser?.email) && (
             <p className="text-xs text-muted-foreground mt-0.5">
-              {profileUser?.cohort ? `Pursuit Fellow · ` : ""}{profileUser?.email}
+              {profileUser?.cohort ? `Velocity Builder · ` : ""}{profileUser?.email}
             </p>
           )}
 

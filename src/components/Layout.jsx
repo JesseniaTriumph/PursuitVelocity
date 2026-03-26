@@ -1,7 +1,8 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, MessageSquare, FolderOpen, Plus } from "lucide-react";
+import { LayoutDashboard, Users, MessageSquare, FolderOpen, Plus, HelpCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import WelcomeTour from "./WelcomeTour";
 
 const navItems = [
   { path: "/", icon: LayoutDashboard, label: "Home" },
@@ -14,6 +15,7 @@ const navItems = [
 export default function Layout() {
   const location = useLocation();
   const [user, setUser] = useState(null);
+  const [tourOpen, setTourOpen] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -30,17 +32,27 @@ export default function Layout() {
             </div>
             <span className="font-dm-sans font-semibold text-lg tracking-tight">Velocity</span>
           </Link>
-          <Link to="/profile">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-              {user?.avatar ? (
-                <img src={user.avatar} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-primary font-semibold text-xs">
-                  {user?.full_name?.[0] || "?"}
-                </span>
-              )}
-            </div>
-          </Link>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setTourOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border/60 px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+              aria-label="Open the Velocity walkthrough"
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              Tour
+            </button>
+            <Link to="/profile">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                {user?.avatar ? (
+                  <img src={user.avatar} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-primary font-semibold text-xs">
+                    {user?.full_name?.[0] || "?"}
+                  </span>
+                )}
+              </div>
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -83,6 +95,8 @@ export default function Layout() {
           })}
         </div>
       </nav>
+
+      {tourOpen && <WelcomeTour forceOpen onClose={() => setTourOpen(false)} />}
     </div>
   );
 }

@@ -7,6 +7,7 @@ const postTypeConfig = {
   progress: { label: "Progress", color: "bg-accent/10 text-primary" },
   milestone: { label: "Milestone 🎉", color: "bg-yellow-50 text-yellow-700" },
   question: { label: "Question", color: "bg-blue-50 text-blue-700" },
+  tutorial: { label: "Tutorial", color: "bg-purple-100 text-purple-800" },
   update: { label: "Update", color: "bg-muted text-muted-foreground" },
 };
 

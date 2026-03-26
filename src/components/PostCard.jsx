@@ -11,6 +11,7 @@ export default function PostCard({ post, currentUserEmail, onLikeToggle, onSaveT
     progress: "bg-accent/10 text-accent",
     milestone: "bg-chart-4/10 text-chart-4",
     question: "bg-chart-3/10 text-chart-3",
+    tutorial: "bg-purple-100 text-purple-800",
   };
 
   return (

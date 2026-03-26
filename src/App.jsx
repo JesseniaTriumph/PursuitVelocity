@@ -24,6 +24,7 @@ import Campfire from './pages/Campfire';
 import Resources from './pages/Resources';
 import Messages from './pages/Messages';
 import Connect from './pages/Connect';
+import Lookbook from './pages/Lookbook';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -70,6 +71,7 @@ const AuthenticatedApp = () => {
         <Route path="/resources" element={<Resources />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/connect" element={<Connect />} />
+        <Route path="/lookbook/:id" element={<Lookbook />} />
         <Route path="*" element={<PageNotFound />} />
       </Route>
       <Route path="/onboarding" element={<Onboarding />} />

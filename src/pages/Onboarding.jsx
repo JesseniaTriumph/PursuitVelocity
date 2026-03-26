@@ -80,9 +80,9 @@ export default function Onboarding() {
       <div className="px-6 pt-8 pb-4">
         <div className="flex items-center gap-2 mb-8">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-space font-bold text-sm">P</span>
+            <span className="text-primary-foreground font-space font-bold text-sm">V</span>
           </div>
-          <span className="font-space font-bold text-lg">Pursuit</span>
+          <span className="font-space font-bold text-lg">Velocity</span>
         </div>
 
         {/* Progress */}

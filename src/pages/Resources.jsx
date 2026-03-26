@@ -1,135 +1,146 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { BookOpen, Search, Plus, Clock, ThumbsUp, ExternalLink } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  BookOpen,
+  Search,
+  Plus,
+  Clock,
+  ThumbsUp,
+  ExternalLink,
+  Loader2,
+} from "lucide-react";
+import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
-  DialogDescription, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn, timeAgo } from "@/lib/utils";
-
-const TUTORIAL_CATEGORIES = [
-  "All", "React", "Python", "AI/ML", "Backend", "DevOps",
-  "Product", "Career", "Design", "Database",
-];
-
-const MOCK_TUTORIALS = [
-  {
-    id: "1",
-    title: "Setting up Supabase Auth in under 15 minutes",
-    content: "Walk through email/password + magic link auth, plus how to set up Row Level Security policies so your data is safe from the start.",
-    category: "Backend",
-    tags: ["Supabase", "Auth", "PostgreSQL"],
-    author: { id: "4", name: "Priya Nair", initials: "PN" },
-    likes: 18,
-    liked: false,
-    time: new Date(Date.now() - 5 * 60 * 60 * 1000),
-    readTime: "8 min read",
-    external_link: null,
-  },
-  {
-    id: "2",
-    title: "Building a RAG pipeline with LangChain + Supabase pgvector",
-    content: "Step-by-step: embed documents, store vectors in Supabase, and query them with LangChain. Includes a working Python example you can copy.",
-    category: "AI/ML",
-    tags: ["Python", "LangChain", "Supabase", "Vector DB"],
-    author: { id: "2", name: "Sofia Rivera", initials: "SR" },
-    likes: 31,
-    liked: false,
-    time: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    readTime: "12 min read",
-    external_link: null,
-  },
-  {
-    id: "3",
-    title: "React Query patterns I use in every project",
-    content: "The 5 patterns that make React Query really click: optimistic updates, dependent queries, infinite scroll, background refetching, and error boundaries.",
-    category: "React",
-    tags: ["React", "TypeScript", "React Query"],
-    author: { id: "3", name: "Kai Thompson", initials: "KT" },
-    likes: 24,
-    liked: true,
-    time: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
-    readTime: "10 min read",
-    external_link: null,
-  },
-  {
-    id: "4",
-    title: "How to scope your MVP in 60 minutes (the 3-question framework)",
-    content: "Most side projects die in scope creep. Here's the exact 3-question framework I use to lock in an MVP that can ship in a weekend.",
-    category: "Product",
-    tags: ["Product Management", "MVP", "Planning"],
-    author: { id: "1", name: "Marcus Johnson", initials: "MJ" },
-    likes: 42,
-    liked: false,
-    time: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
-    readTime: "5 min read",
-    external_link: null,
-  },
-  {
-    id: "5",
-    title: "Figma → React: my component handoff workflow",
-    content: "How I design in Figma with engineers in mind, structure component props to match design variants, and use Storybook to close the gap.",
-    category: "Design",
-    tags: ["Figma", "React", "Design Systems", "Accessibility"],
-    author: { id: "6", name: "Amara Osei", initials: "AO" },
-    likes: 29,
-    liked: false,
-    time: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
-    readTime: "9 min read",
-    external_link: null,
-  },
-  {
-    id: "6",
-    title: "Deploying a Node + Postgres app on Render for free",
-    content: "Full walkthrough: Dockerizing a Node.js app, connecting to a Render Postgres instance, setting env vars, and setting up auto-deploy from GitHub.",
-    category: "DevOps",
-    tags: ["Node.js", "Docker", "Render", "PostgreSQL"],
-    author: { id: "5", name: "Devon Clarke", initials: "DC" },
-    likes: 15,
-    liked: false,
-    time: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-    readTime: "7 min read",
-    external_link: null,
-  },
-];
+import UserAvatar from "../components/UserAvatar";
+import useCurrentUser from "../hooks/useCurrentUser";
+import {
+  buildTutorialContent,
+  buildTutorialHashtags,
+  parseTutorialPost,
+  TUTORIAL_CATEGORIES,
+} from "@/lib/tutorial-posts";
 
 export default function Resources() {
-  const navigate = useNavigate();
-  const [tutorials, setTutorials] = useState(MOCK_TUTORIALS);
+  const { user } = useCurrentUser();
+  const [tutorials, setTutorials] = useState([]);
+  const [likes, setLikes] = useState([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [addOpen, setAddOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = tutorials.filter((t) => {
+  useEffect(() => {
+    loadResources();
+  }, [user?.email]);
+
+  async function loadResources() {
+    setLoading(true);
+
+    try {
+      const requests = [base44.entities.Post.list("-created_date", 100)];
+
+      if (user?.email) {
+        requests.push(base44.entities.Like.filter({ user_email: user.email }));
+      }
+
+      const [posts, userLikes = []] = await Promise.all(requests);
+      const tutorialPosts = posts
+        .filter((post) => post.post_type === "tutorial")
+        .map(parseTutorialPost);
+
+      setTutorials(tutorialPosts);
+      setLikes(userLikes);
+    } catch {
+      setTutorials([]);
+      setLikes([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function toggleLike(postId) {
+    if (!user?.email) return;
+
+    const existing = likes.find((like) => like.post_id === postId);
+    const currentTutorial = tutorials.find((tutorial) => tutorial.id === postId);
+    const currentCount = currentTutorial?.likes_count || 0;
+
+    if (existing) {
+      await base44.entities.Like.delete(existing.id);
+      setLikes((prev) => prev.filter((like) => like.id !== existing.id));
+      setTutorials((prev) =>
+        prev.map((tutorial) =>
+          tutorial.id === postId
+            ? { ...tutorial, likes_count: Math.max(0, (tutorial.likes_count || 0) - 1) }
+            : tutorial
+        )
+      );
+      await base44.entities.Post.update(postId, {
+        likes_count: Math.max(0, currentCount - 1),
+      });
+      return;
+    }
+
+    const newLike = await base44.entities.Like.create({
+      post_id: postId,
+      user_email: user.email,
+    });
+
+    setLikes((prev) => [...prev, newLike]);
+    setTutorials((prev) =>
+      prev.map((tutorial) =>
+        tutorial.id === postId
+          ? { ...tutorial, likes_count: (tutorial.likes_count || 0) + 1 }
+          : tutorial
+      )
+    );
+    await base44.entities.Post.update(postId, {
+      likes_count: currentCount + 1,
+    });
+  }
+
+  const filtered = tutorials.filter((tutorial) => {
+    const query = search.trim().toLowerCase();
     const matchesSearch =
-      search === "" ||
-      t.title.toLowerCase().includes(search.toLowerCase()) ||
-      t.content.toLowerCase().includes(search.toLowerCase()) ||
-      t.tags.some((tag) => tag.toLowerCase().includes(search.toLowerCase()));
-    const matchesCategory = category === "All" || t.category === category;
+      query === "" ||
+      tutorial.title.toLowerCase().includes(query) ||
+      tutorial.body.toLowerCase().includes(query) ||
+      tutorial.tags.some((tag) => tag.toLowerCase().includes(query)) ||
+      tutorial.author_name?.toLowerCase().includes(query);
+    const matchesCategory = category === "All" || tutorial.category === category;
     return matchesSearch && matchesCategory;
   });
 
-  function toggleLike(id) {
-    setTutorials((prev) =>
-      prev.map((t) =>
-        t.id === id ? { ...t, liked: !t.liked, likes: t.liked ? t.likes - 1 : t.likes + 1 } : t
-      )
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
     );
-    // Replace with: await TutorialLike.create / delete
   }
 
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto">
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -137,7 +148,7 @@ export default function Resources() {
             <h1 className="text-2xl font-semibold">Resources</h1>
           </div>
           <p className="text-muted-foreground text-sm">
-            Tutorials, guides, and tips shared by the fellowship community.
+            Tutorials and guides shared directly from community posts.
           </p>
         </div>
         <Button onClick={() => setAddOpen(true)}>
@@ -146,7 +157,6 @@ export default function Resources() {
         </Button>
       </div>
 
-      {/* Search + filters */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center mb-5">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden="true" />
@@ -154,12 +164,11 @@ export default function Resources() {
             placeholder="Search tutorials..."
             className="pl-8"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(event) => setSearch(event.target.value)}
           />
         </div>
       </div>
 
-      {/* Category chips */}
       <div className="flex gap-2 overflow-x-auto pb-2 mb-5 -mx-1 px-1">
         {TUTORIAL_CATEGORIES.map((cat) => (
           <button
@@ -177,77 +186,103 @@ export default function Resources() {
         ))}
       </div>
 
-      <p className="text-xs text-muted-foreground mb-4">{filtered.length} resource{filtered.length !== 1 ? "s" : ""}</p>
+      <p className="text-xs text-muted-foreground mb-4">
+        {filtered.length} resource{filtered.length !== 1 ? "s" : ""}
+      </p>
 
-      {/* Tutorial grid */}
       {filtered.length === 0 ? (
         <div className="text-center py-16">
           <BookOpen className="h-10 w-10 mx-auto mb-3 text-muted-foreground opacity-40" aria-hidden="true" />
           <p className="text-muted-foreground text-sm">No resources match your search.</p>
-          <Button variant="outline" className="mt-4" onClick={() => { setSearch(""); setCategory("All"); }}>
+          <Button
+            variant="outline"
+            className="mt-4"
+            onClick={() => {
+              setSearch("");
+              setCategory("All");
+            }}
+          >
             Clear filters
           </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {filtered.map((tutorial) => (
-            <TutorialCard key={tutorial.id} tutorial={tutorial} onLike={toggleLike} />
+            <TutorialCard
+              key={tutorial.id}
+              tutorial={tutorial}
+              isLiked={likes.some((like) => like.post_id === tutorial.id)}
+              onLike={toggleLike}
+            />
           ))}
         </div>
       )}
 
-      {/* Add Tutorial Dialog */}
-      <AddTutorialDialog open={addOpen} onOpenChange={setAddOpen} />
+      <AddTutorialDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        user={user}
+        onCreated={loadResources}
+      />
     </div>
   );
 }
 
-function TutorialCard({ tutorial, onLike }) {
+function TutorialCard({ tutorial, isLiked, onLike }) {
   return (
     <Card className="card-interactive flex flex-col">
       <CardContent className="p-5 flex flex-col flex-1">
-        {/* Category + read time */}
         <div className="flex items-center gap-2 mb-2">
-          <Badge variant="secondary" className="text-xs">{tutorial.category}</Badge>
+          <Badge variant="secondary" className="text-xs">
+            {tutorial.category}
+          </Badge>
           <span className="text-xs text-muted-foreground flex items-center gap-1">
             <Clock className="h-3 w-3" aria-hidden="true" />
             {tutorial.readTime}
           </span>
         </div>
 
-        {/* Title */}
         <h3 className="font-semibold text-sm leading-snug mb-2">{tutorial.title}</h3>
 
-        {/* Content preview */}
-        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3 flex-1 mb-3">
-          {tutorial.content}
+        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-4 flex-1 mb-3 whitespace-pre-wrap">
+          {tutorial.body}
         </p>
 
-        {/* Tags */}
-        <div className="flex flex-wrap gap-1 mb-3">
-          {tutorial.tags.slice(0, 3).map((tag) => (
-            <Badge key={tag} variant="outline" className="text-xs px-1.5 py-0">{tag}</Badge>
-          ))}
-        </div>
+        {tutorial.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            {tutorial.tags.slice(0, 4).map((tag) => (
+              <Badge key={tag} variant="outline" className="text-xs px-1.5 py-0">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        )}
 
-        {/* Footer */}
         <div className="flex items-center justify-between pt-3 border-t">
           <div className="flex items-center gap-2">
-            <Avatar className="h-6 w-6">
-              <AvatarFallback className="text-[10px]">{tutorial.author.initials}</AvatarFallback>
-            </Avatar>
+            <UserAvatar
+              name={tutorial.author_name}
+              src={tutorial.author_avatar}
+              size={24}
+              className="rounded-full"
+            />
             <Link
-              to={`/profile/${tutorial.author.id}`}
+              to={`/profile/${tutorial.author_email}`}
               className="text-xs font-medium hover:text-primary transition-colors"
             >
-              {tutorial.author.name}
+              {tutorial.author_name}
             </Link>
-            <span className="text-xs text-muted-foreground">{timeAgo(tutorial.time)}</span>
+            <span className="text-xs text-muted-foreground">{timeAgo(tutorial.created_date)}</span>
           </div>
 
           <div className="flex items-center gap-1">
-            {tutorial.external_link && (
-              <a href={tutorial.external_link} target="_blank" rel="noopener noreferrer" aria-label="Open external link">
+            {tutorial.externalLink && (
+              <a
+                href={tutorial.externalLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Open external link"
+              >
                 <Button size="icon" variant="ghost" className="h-7 w-7">
                   <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                 </Button>
@@ -255,17 +290,17 @@ function TutorialCard({ tutorial, onLike }) {
             )}
             <button
               onClick={() => onLike(tutorial.id)}
-              aria-label={tutorial.liked ? "Unlike" : "Like this tutorial"}
-              aria-pressed={tutorial.liked}
+              aria-label={isLiked ? "Unlike" : "Like this tutorial"}
+              aria-pressed={isLiked}
               className={cn(
                 "flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-colors",
-                tutorial.liked
+                isLiked
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:bg-muted"
               )}
             >
               <ThumbsUp className="h-3.5 w-3.5" aria-hidden="true" />
-              {tutorial.likes}
+              {tutorial.likes_count || 0}
             </button>
           </div>
         </div>
@@ -274,18 +309,48 @@ function TutorialCard({ tutorial, onLike }) {
   );
 }
 
-function AddTutorialDialog({ open, onOpenChange }) {
-  const [form, setForm] = useState({ title: "", content: "", category: "React", tags: "", external_link: "" });
+function AddTutorialDialog({ open, onOpenChange, user, onCreated }) {
+  const [form, setForm] = useState({
+    title: "",
+    content: "",
+    category: "React",
+    tags: "",
+    external_link: "",
+  });
   const [saving, setSaving] = useState(false);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  async function handleSubmit(event) {
+    event.preventDefault();
+    if (!user || saving) return;
+
     setSaving(true);
-    // Replace with: await Update.create({ ...form, type: "tutorial" })
-    await new Promise((r) => setTimeout(r, 700));
+
+    await base44.entities.Post.create({
+      content: buildTutorialContent({
+        title: form.title,
+        body: form.content,
+        externalLink: form.external_link,
+      }),
+      image_url: null,
+      hashtags: buildTutorialHashtags(form.category, form.tags.split(",")),
+      author_name: user.full_name || "Anonymous",
+      author_email: user.email,
+      author_avatar: user.avatar || "",
+      post_type: "tutorial",
+      likes_count: 0,
+      comments_count: 0,
+    });
+
     setSaving(false);
     onOpenChange(false);
-    setForm({ title: "", content: "", category: "React", tags: "", external_link: "" });
+    setForm({
+      title: "",
+      content: "",
+      category: "React",
+      tags: "",
+      external_link: "",
+    });
+    onCreated?.();
   }
 
   return (
@@ -294,7 +359,7 @@ function AddTutorialDialog({ open, onOpenChange }) {
         <DialogHeader>
           <DialogTitle>Share a Tutorial</DialogTitle>
           <DialogDescription>
-            Teach something you've learned. This will be posted to the community feed and Resources page.
+            Publish a tutorial as a community resource post.
           </DialogDescription>
         </DialogHeader>
 
@@ -307,7 +372,7 @@ function AddTutorialDialog({ open, onOpenChange }) {
               id="tut-title"
               placeholder="e.g. How I set up Supabase auth in 15 minutes"
               value={form.title}
-              onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
+              onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
               required
             />
           </div>
@@ -321,7 +386,7 @@ function AddTutorialDialog({ open, onOpenChange }) {
               placeholder="Walk through the concept, steps, or insight you want to share..."
               className="min-h-[120px]"
               value={form.content}
-              onChange={(e) => setForm((p) => ({ ...p, content: e.target.value }))}
+              onChange={(event) => setForm((prev) => ({ ...prev, content: event.target.value }))}
               required
             />
           </div>
@@ -329,13 +394,18 @@ function AddTutorialDialog({ open, onOpenChange }) {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="tut-category">Category</Label>
-              <Select value={form.category} onValueChange={(v) => setForm((p) => ({ ...p, category: v }))}>
+              <Select
+                value={form.category}
+                onValueChange={(value) => setForm((prev) => ({ ...prev, category: value }))}
+              >
                 <SelectTrigger id="tut-category">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {TUTORIAL_CATEGORIES.filter((c) => c !== "All").map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  {TUTORIAL_CATEGORIES.filter((item) => item !== "All").map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {item}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -346,7 +416,7 @@ function AddTutorialDialog({ open, onOpenChange }) {
                 id="tut-tags"
                 placeholder="React, TypeScript..."
                 value={form.tags}
-                onChange={(e) => setForm((p) => ({ ...p, tags: e.target.value }))}
+                onChange={(event) => setForm((prev) => ({ ...prev, tags: event.target.value }))}
               />
             </div>
           </div>
@@ -357,17 +427,17 @@ function AddTutorialDialog({ open, onOpenChange }) {
               id="tut-link"
               placeholder="https://..."
               value={form.external_link}
-              onChange={(e) => setForm((p) => ({ ...p, external_link: e.target.value }))}
+              onChange={(event) => setForm((prev) => ({ ...prev, external_link: event.target.value }))}
             />
-            <p className="text-xs text-muted-foreground">Link to a blog post, GitHub gist, video, etc.</p>
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={!form.title.trim() || !form.content.trim() || saving}>
-              {saving ? "Posting..." : "Share Tutorial"}
-            </Button>
-          </DialogFooter>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={!user || saving || !form.title.trim() || !form.content.trim()}
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Publish Tutorial"}
+          </Button>
         </form>
       </DialogContent>
     </Dialog>
