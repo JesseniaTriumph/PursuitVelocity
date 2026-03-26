@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import PostCard from "../components/PostCard";
 import EmptyState from "../components/EmptyState";
-import { Settings, Newspaper, Loader2, LogOut, UserPlus, UserMinus, Target, Sparkles, Gift } from "lucide-react";
+import { Settings, Newspaper, Loader2, LogOut, UserPlus, UserMinus, Target, Sparkles, Gift, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import useCurrentUser from "../hooks/useCurrentUser";
 import { motion } from "framer-motion";
@@ -216,14 +216,21 @@ export default function Profile() {
             </Button>
           </div>
         ) : (
-          <Button
-            onClick={handleFollow}
-            variant={isFollowing ? "outline" : "default"}
-            className="w-full rounded-xl gap-1.5"
-            size="sm"
-          >
-            {isFollowing ? <><UserMinus className="w-4 h-4" /> Unfollow</> : <><UserPlus className="w-4 h-4" /> Follow</>}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleFollow}
+              variant={isFollowing ? "outline" : "default"}
+              className="flex-1 rounded-xl gap-1.5"
+              size="sm"
+            >
+              {isFollowing ? <><UserMinus className="w-4 h-4" /> Unfollow</> : <><UserPlus className="w-4 h-4" /> Follow</>}
+            </Button>
+            <Link to={`/messages?to=${targetEmail}`}>
+              <Button variant="outline" size="sm" className="rounded-xl gap-1.5">
+                <MessageSquare className="w-4 h-4" /> Message
+              </Button>
+            </Link>
+          </div>
         )}
       </div>
 

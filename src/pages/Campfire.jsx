@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Flame, Sparkles, Calendar, ChevronRight, RefreshCw, Users } from "lucide-react";
+import { Flame, Sparkles, Calendar, ChevronRight, RefreshCw, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -230,26 +230,28 @@ function MatchCard({ match }) {
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2 pt-3 border-t">
-          <Link to={`/profile/${match.person.id}`} className="flex-1">
-            <Button variant="outline" size="sm" className="w-full">
-              View Profile <ChevronRight className="h-4 w-4 ml-auto" aria-hidden="true" />
-            </Button>
-          </Link>
-          {match.calendly_url ? (
+        <div className="flex flex-col gap-2 pt-3 border-t">
+          <div className="flex gap-2">
+            <Link to={`/profile/${match.person.id}`} className="flex-1">
+              <Button variant="outline" size="sm" className="w-full">
+                View Profile <ChevronRight className="h-4 w-4 ml-auto" aria-hidden="true" />
+              </Button>
+            </Link>
+            <Link to={`/messages?to=${match.person.email || match.person.id}`} className="flex-1">
+              <Button variant="outline" size="sm" className="w-full gap-1.5">
+                <MessageSquare className="h-4 w-4" aria-hidden="true" /> Message
+              </Button>
+            </Link>
+          </div>
+          {match.calendly_url && (
             <Button
               size="sm"
-              className="flex-1"
+              className="w-full gap-1.5"
               onClick={handleSchedule}
               aria-label={`Schedule a meeting with ${match.person.name}`}
             >
               <Calendar className="h-4 w-4" aria-hidden="true" />
               Schedule Meeting
-            </Button>
-          ) : (
-            <Button size="sm" variant="outline" className="flex-1">
-              <Users className="h-4 w-4" aria-hidden="true" />
-              Connect
             </Button>
           )}
         </div>

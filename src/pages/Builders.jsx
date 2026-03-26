@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Calendar, Github, Linkedin, ExternalLink } from "lucide-react";
+import { Search, Calendar, Github, Linkedin, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ const MOCK_BUILDERS = [
     goal: "Build EdTech products",
     workTypes: ["Frontend", "Backend", "AI/ML"],
     projects: ["AI Study Buddy"],
+    email: "marcus@fellowship.app",
     github_url: "https://github.com/marcusj",
     linkedin_url: "https://linkedin.com/in/marcusj",
     calendly_url: "https://calendly.com/marcusj",
@@ -33,6 +34,7 @@ const MOCK_BUILDERS = [
     goal: "Build AI infrastructure",
     workTypes: ["Backend", "AI/ML", "Data Science"],
     projects: ["AI Study Buddy"],
+    email: "sofia@fellowship.app",
     github_url: "https://github.com/sofiar",
     linkedin_url: null,
     calendly_url: "https://calendly.com/sofiar",
@@ -47,6 +49,7 @@ const MOCK_BUILDERS = [
     goal: "Ship polished SaaS products",
     workTypes: ["Frontend", "UI/UX Design"],
     projects: ["AI Study Buddy", "CodeReview Buddy"],
+    email: "kai@fellowship.app",
     github_url: null,
     linkedin_url: "https://linkedin.com/in/kait",
     calendly_url: null,
@@ -61,6 +64,7 @@ const MOCK_BUILDERS = [
     goal: "Build community tools",
     workTypes: ["Frontend", "Product Management"],
     projects: ["Community Events App"],
+    email: "priya@fellowship.app",
     github_url: "https://github.com/priyan",
     linkedin_url: "https://linkedin.com/in/priyan",
     calendly_url: "https://calendly.com/priyan",
@@ -75,6 +79,7 @@ const MOCK_BUILDERS = [
     goal: "Build mobile-first apps",
     workTypes: ["Mobile", "Backend"],
     projects: ["NeighborShare", "CodeReview Buddy"],
+    email: "devon@fellowship.app",
     github_url: "https://github.com/devonc",
     linkedin_url: null,
     calendly_url: null,
@@ -89,6 +94,7 @@ const MOCK_BUILDERS = [
     goal: "Design-first consumer products",
     workTypes: ["UI/UX Design", "Frontend"],
     projects: ["MoodTrack"],
+    email: "amara@fellowship.app",
     github_url: null,
     linkedin_url: "https://linkedin.com/in/amarao",
     calendly_url: "https://calendly.com/amarao",
@@ -238,54 +244,45 @@ function BuilderCard({ builder }) {
         )}
 
         {/* Actions */}
-        <div className="flex items-center gap-2 pt-3 border-t">
-          <Link to={`/profile/${builder.id}`} className="flex-1">
-            <Button variant="outline" size="sm" className="w-full">View Profile</Button>
-          </Link>
+        <div className="flex flex-col gap-2 pt-3 border-t">
+          <div className="flex gap-2">
+            <Link to={`/profile/${builder.id}`} className="flex-1">
+              <Button variant="outline" size="sm" className="w-full">View Profile</Button>
+            </Link>
+            <Link to={`/messages?to=${builder.email}`} className="flex-1">
+              <Button variant="outline" size="sm" className="w-full gap-1.5">
+                <MessageSquare className="h-4 w-4" aria-hidden="true" /> Message
+              </Button>
+            </Link>
+          </div>
           {builder.calendly_url ? (
             <Button
               size="sm"
-              className="flex-1 gap-1.5"
+              className="w-full gap-1.5"
               onClick={handleSchedule}
               aria-label={`Schedule a meeting with ${builder.name}`}
             >
               <Calendar className="h-4 w-4" aria-hidden="true" />
-              Schedule
+              Schedule Meeting
             </Button>
           ) : (
-            <Button size="sm" variant="outline" className="flex-1" disabled>
-              <Calendar className="h-4 w-4" aria-hidden="true" />
-              No calendar set
-            </Button>
+            <div className="flex gap-1">
+              {builder.github_url && (
+                <a href={builder.github_url} target="_blank" rel="noopener noreferrer" aria-label={`${builder.name}'s GitHub`}>
+                  <Button size="icon" variant="ghost" className="h-8 w-8">
+                    <Github className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                </a>
+              )}
+              {builder.linkedin_url && (
+                <a href={builder.linkedin_url} target="_blank" rel="noopener noreferrer" aria-label={`${builder.name}'s LinkedIn`}>
+                  <Button size="icon" variant="ghost" className="h-8 w-8">
+                    <Linkedin className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                </a>
+              )}
+            </div>
           )}
-
-          {/* Social links */}
-          <div className="flex gap-1">
-            {builder.github_url && (
-              <a
-                href={builder.github_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`${builder.name}'s GitHub`}
-              >
-                <Button size="icon" variant="ghost" className="h-8 w-8">
-                  <Github className="h-4 w-4" aria-hidden="true" />
-                </Button>
-              </a>
-            )}
-            {builder.linkedin_url && (
-              <a
-                href={builder.linkedin_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`${builder.name}'s LinkedIn`}
-              >
-                <Button size="icon" variant="ghost" className="h-8 w-8">
-                  <Linkedin className="h-4 w-4" aria-hidden="true" />
-                </Button>
-              </a>
-            )}
-          </div>
         </div>
       </CardContent>
     </Card>
