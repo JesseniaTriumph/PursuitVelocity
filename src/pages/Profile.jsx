@@ -6,7 +6,7 @@ import EmptyState from "../components/EmptyState";
 import UserAvatar from "../components/UserAvatar";
 import {
   Settings, Newspaper, Loader2, LogOut,
-  Linkedin, Mail, ExternalLink, Plus, MessageSquare,
+  Linkedin, Mail, ExternalLink, Plus, MessageSquare, Github, Globe, Twitter,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import useCurrentUser from "../hooks/useCurrentUser";
@@ -14,6 +14,7 @@ import { motion } from "framer-motion";
 import {
   fetchBuilderDirectory,
   findBuilderByIdentifier,
+  getBuilderLookbookPath,
 } from "@/lib/builder-directory";
 
 export default function Profile() {
@@ -180,9 +181,11 @@ export default function Profile() {
                     <MessageSquare className="w-3.5 h-3.5" /> Message
                   </Button>
                 </Link>
-                <Button size="sm" className="rounded-xl h-8 text-xs gap-1.5">
-                  <Plus className="w-3.5 h-3.5" /> Connect
-                </Button>
+                <Link to={getBuilderLookbookPath(profileUser || {})}>
+                  <Button size="sm" className="rounded-xl h-8 text-xs gap-1.5">
+                    <Plus className="w-3.5 h-3.5" /> Lookbook
+                  </Button>
+                </Link>
               </>
             )}
           </div>
@@ -199,20 +202,65 @@ export default function Profile() {
             </p>
           )}
 
-          {/* LinkedIn link */}
-          {profileUser?.linkedin_url && (
-            <a
-              href={profileUser.linkedin_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 mt-1.5 text-xs text-muted-foreground hover:text-[#0A66C2] transition-colors"
-              aria-label="LinkedIn profile"
-            >
-              <Linkedin className="w-3.5 h-3.5" />
-              <span>LinkedIn</span>
-              <ExternalLink className="w-3 h-3 opacity-60" />
-            </a>
-          )}
+          <div className="flex flex-wrap gap-2 mt-2">
+            <Link to={getBuilderLookbookPath(profileUser || {})}>
+              <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5">
+                Lookbook
+              </Button>
+            </Link>
+            {profileUser?.linkedin_url && (
+              <a
+                href={profileUser.linkedin_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-2.5 h-8 rounded-xl border text-xs text-muted-foreground hover:text-[#0A66C2] transition-colors"
+                aria-label="LinkedIn profile"
+              >
+                <Linkedin className="w-3.5 h-3.5" />
+                <span>LinkedIn</span>
+                <ExternalLink className="w-3 h-3 opacity-60" />
+              </a>
+            )}
+            {profileUser?.github_url && (
+              <a
+                href={profileUser.github_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-2.5 h-8 rounded-xl border text-xs text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="GitHub profile"
+              >
+                <Github className="w-3.5 h-3.5" />
+                <span>GitHub</span>
+                <ExternalLink className="w-3 h-3 opacity-60" />
+              </a>
+            )}
+            {profileUser?.portfolio_url && (
+              <a
+                href={profileUser.portfolio_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-2.5 h-8 rounded-xl border text-xs text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Portfolio"
+              >
+                <Globe className="w-3.5 h-3.5" />
+                <span>Portfolio</span>
+                <ExternalLink className="w-3 h-3 opacity-60" />
+              </a>
+            )}
+            {profileUser?.x_url && (
+              <a
+                href={profileUser.x_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-2.5 h-8 rounded-xl border text-xs text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="X profile"
+              >
+                <Twitter className="w-3.5 h-3.5" />
+                <span>X</span>
+                <ExternalLink className="w-3 h-3 opacity-60" />
+              </a>
+            )}
+          </div>
         </div>
       </div>
 

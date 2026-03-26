@@ -219,6 +219,10 @@ export function getBuilderProfilePath(builder) {
   return `/profile/${builder.email || builder.id}`;
 }
 
+export function getBuilderLookbookPath(builder) {
+  return `/lookbook/${builder.email || builder.id}`;
+}
+
 export function buildBuilderRole(builder) {
   const labels = Array.isArray(builder?.workTypes) && builder.workTypes.length > 0
     ? builder.workTypes

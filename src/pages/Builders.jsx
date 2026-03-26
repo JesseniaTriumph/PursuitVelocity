@@ -5,6 +5,7 @@ import {
   Calendar,
   Github,
   Linkedin,
+  BookOpen,
   Loader2,
   MessageSquare,
 } from "lucide-react";
@@ -24,6 +25,7 @@ import UserAvatar from "../components/UserAvatar";
 import {
   buildBuilderRole,
   fetchBuilderDirectory,
+  getBuilderLookbookPath,
   getBuilderProfilePath,
 } from "@/lib/builder-directory";
 
@@ -171,6 +173,7 @@ export default function Builders() {
 function BuilderCard({ builder }) {
   const avail = AVAILABILITY_LABELS[builder.availability] || AVAILABILITY_LABELS.selective;
   const profilePath = getBuilderProfilePath(builder);
+  const lookbookPath = getBuilderLookbookPath(builder);
 
   function handleSchedule(event) {
     event.preventDefault();
@@ -252,6 +255,12 @@ function BuilderCard({ builder }) {
               </Button>
             </Link>
           </div>
+          <Link to={lookbookPath}>
+            <Button variant="outline" size="sm" className="w-full gap-1.5">
+              <BookOpen className="h-4 w-4" aria-hidden="true" />
+              Open Lookbook
+            </Button>
+          </Link>
           {builder.calendly_url ? (
             <Button
               size="sm"

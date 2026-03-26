@@ -4,6 +4,7 @@ import {
   Flame,
   Sparkles,
   Calendar,
+  BookOpen,
   ChevronRight,
   RefreshCw,
   Loader2,
@@ -20,6 +21,7 @@ import {
   clearBuilderDirectoryCache,
   fetchBuilderDirectory,
   getAvailableBuilders,
+  getBuilderLookbookPath,
   getBuilderProfilePath,
   rankBuilderMatches,
 } from "@/lib/builder-directory";
@@ -185,16 +187,24 @@ export default function Campfire() {
                     </Badge>
                   ))}
                 </div>
-                {builder.calendly_url && (
-                  <Button
-                    size="sm"
-                    className="w-full gap-1.5 mt-3"
-                    onClick={() => window.open(builder.calendly_url, "_blank", "noopener,noreferrer")}
-                  >
-                    <Calendar className="h-4 w-4" aria-hidden="true" />
-                    Book a Slot
-                  </Button>
-                )}
+                <div className="flex gap-2 mt-3">
+                  <Link to={getBuilderLookbookPath(builder)} className="flex-1">
+                    <Button size="sm" variant="outline" className="w-full gap-1.5">
+                      <BookOpen className="h-4 w-4" aria-hidden="true" />
+                      Lookbook
+                    </Button>
+                  </Link>
+                  {builder.calendly_url && (
+                    <Button
+                      size="sm"
+                      className="flex-1 gap-1.5"
+                      onClick={() => window.open(builder.calendly_url, "_blank", "noopener,noreferrer")}
+                    >
+                      <Calendar className="h-4 w-4" aria-hidden="true" />
+                      Book a Slot
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
           ))
@@ -206,6 +216,7 @@ export default function Campfire() {
 
 function MatchCard({ match }) {
   const profilePath = getBuilderProfilePath(match.person);
+  const lookbookPath = getBuilderLookbookPath(match.person);
 
   function handleSchedule() {
     if (match.calendly_url) {
@@ -279,6 +290,12 @@ function MatchCard({ match }) {
               </Button>
             </Link>
           </div>
+          <Link to={lookbookPath}>
+            <Button variant="outline" size="sm" className="w-full gap-1.5">
+              <BookOpen className="h-4 w-4" aria-hidden="true" />
+              Open Lookbook
+            </Button>
+          </Link>
           {match.calendly_url && (
             <Button
               size="sm"

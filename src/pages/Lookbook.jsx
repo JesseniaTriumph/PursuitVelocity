@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   Github,
@@ -14,6 +14,7 @@ import {
   MessageSquare,
   Zap,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import UserAvatar from "../components/UserAvatar";
 import {
   fetchBuilderDirectory,
   findBuilderByIdentifier,
+  getBuilderLookbookPath,
   getBuilderProfilePath,
 } from "@/lib/builder-directory";
 
@@ -57,10 +59,150 @@ const STATUS_COLORS = {
 
 export default function Lookbook() {
   const { id } = useParams();
+
+  if (!id) {
+    return <LookbookDirectory />;
+  }
+
+  return <LookbookProfile id={id} />;
+}
+
+function LookbookDirectory() {
   const [loading, setLoading] = useState(true);
+  const [builders, setBuilders] = useState([]);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const load = async () => {
+      setLoading(true);
+      try {
+        const directory = await fetchBuilderDirectory();
+        if (!isMounted) {
+          return;
+        }
+        setBuilders(directory.builders);
+      } catch {
+        if (isMounted) {
+          setBuilders([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    load();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const filteredBuilders = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return builders.filter((builder) => {
+      if (!query) return true;
+      return (
+        builder.name.toLowerCase().includes(query) ||
+        builder.bio.toLowerCase().includes(query) ||
+        builder.skills.some((skill) => skill.toLowerCase().includes(query)) ||
+        builder.goal.toLowerCase().includes(query)
+      );
+    });
+  }, [builders, search]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="max-w-5xl mx-auto px-4 md:px-8 py-10 space-y-8">
+        <div className="space-y-3">
+          <Badge variant="outline" className="rounded-full px-3 py-1 text-xs">
+            Velocity Lookbook
+          </Badge>
+          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
+            Explore the builders behind the work
+          </h1>
+          <p className="text-muted-foreground max-w-2xl">
+            Browse public builder pages, current projects, social links, and GitHub-backed profile insights.
+          </p>
+        </div>
+
+        <div className="rounded-2xl border bg-card px-4 py-3">
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search by name, skill, or focus..."
+            className="w-full bg-transparent text-sm focus:outline-none placeholder:text-muted-foreground/60"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredBuilders.map((builder) => (
+            <Card key={builder.id} className="card-interactive">
+              <CardContent className="p-5 space-y-4">
+                <div className="flex items-start gap-3">
+                  <UserAvatar
+                    name={builder.name}
+                    src={builder.avatar}
+                    size={56}
+                    className="rounded-2xl"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <Link
+                      to={getBuilderLookbookPath(builder)}
+                      className="text-lg font-semibold hover:text-primary transition-colors"
+                    >
+                      {builder.name}
+                    </Link>
+                    <p className="text-sm text-primary mt-1">{builder.goal}</p>
+                    <p className="text-sm text-muted-foreground mt-2 line-clamp-3">
+                      {builder.bio || `${builder.name} is building in public with Velocity.`}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {builder.skills.slice(0, 5).map((skill) => (
+                    <Badge key={skill} variant="secondary" className="text-xs">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+
+                <div className="flex gap-2">
+                  <Link to={getBuilderLookbookPath(builder)} className="flex-1">
+                    <Button className="w-full">Open Lookbook</Button>
+                  </Link>
+                  <Link to={getBuilderProfilePath(builder)} className="flex-1">
+                    <Button variant="outline" className="w-full">Profile</Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LookbookProfile({ id }) {
+  const [loading, setLoading] = useState(true);
+  const [insightLoading, setInsightLoading] = useState(false);
   const [profile, setProfile] = useState(null);
   const [projects, setProjects] = useState([]);
   const [updates, setUpdates] = useState([]);
+  const [insight, setInsight] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -78,6 +220,7 @@ export default function Lookbook() {
             setProfile(null);
             setProjects([]);
             setUpdates([]);
+            setInsight(null);
             setLoading(false);
           }
           return;
@@ -92,7 +235,7 @@ export default function Lookbook() {
           return;
         }
 
-        setProfile(
+        const resolvedProfile =
           builder || {
             id: targetEmail,
             email: targetEmail,
@@ -103,18 +246,42 @@ export default function Lookbook() {
             goal: "Builder",
             workTypes: [],
             cohort: null,
-          }
-        );
+            github_url: null,
+          };
+
+        setProfile(resolvedProfile);
         setProjects(projectRows);
         setUpdates(postRows.filter((post) => post.post_type !== "tutorial").slice(0, 5));
+        setLoading(false);
+
+        if (resolvedProfile.github_url || projectRows.length > 0) {
+          setInsightLoading(true);
+          try {
+            const result = await base44.functions.invoke("builderInsights", {
+              ...resolvedProfile,
+              projects: projectRows,
+            });
+            if (isMounted) {
+              setInsight(result?.data ?? result);
+            }
+          } catch {
+            if (isMounted) {
+              setInsight(null);
+            }
+          } finally {
+            if (isMounted) {
+              setInsightLoading(false);
+            }
+          }
+        } else {
+          setInsight(null);
+        }
       } catch {
         if (isMounted) {
           setProfile(null);
           setProjects([]);
           setUpdates([]);
-        }
-      } finally {
-        if (isMounted) {
+          setInsight(null);
           setLoading(false);
         }
       }
@@ -161,10 +328,10 @@ export default function Lookbook() {
     <div className="min-h-screen bg-background">
       <div className="sticky top-0 z-10 bg-card/90 backdrop-blur-sm border-b px-4 md:px-8 flex items-center justify-between h-14">
         <Link
-          to={getBuilderProfilePath(profile)}
+          to="/lookbook"
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Back to profile
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Back to lookbook
         </Link>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleShare} aria-label="Share this lookbook">
@@ -234,9 +401,88 @@ export default function Lookbook() {
                   </Button>
                 </a>
               )}
+              <Link to={getBuilderProfilePath(profile)}>
+                <Button variant="outline" size="sm" className="gap-2 h-9">
+                  Profile
+                </Button>
+              </Link>
             </div>
           </div>
         </section>
+
+        {(insightLoading || insight?.analysis) && (
+          <>
+            <Separator />
+            <section className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  AI Builder Analysis
+                </h2>
+              </div>
+
+              {insightLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Analyzing public projects and GitHub activity...
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="p-5 space-y-4">
+                    <p className="text-sm leading-relaxed text-foreground/90">
+                      {insight?.analysis?.summary}
+                    </p>
+                    {insight?.analysis?.strengths?.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {insight.analysis.strengths.map((strength) => (
+                          <Badge key={strength} variant="secondary" className="text-xs">
+                            {strength}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    {insight?.analysis?.collaboration_pitch && (
+                      <p className="text-sm text-muted-foreground">
+                        {insight.analysis.collaboration_pitch}
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {insight?.github?.repos?.length > 0 && (
+                <div className="grid grid-cols-1 gap-3">
+                  {insight.github.repos.slice(0, 4).map((repo) => (
+                    <Card key={repo.url} className="card-interactive">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <a
+                              href={repo.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-semibold text-sm hover:text-primary transition-colors"
+                            >
+                              {repo.name}
+                            </a>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {repo.description || "Public GitHub repository"}
+                            </p>
+                          </div>
+                          {repo.language && (
+                            <Badge variant="outline" className="text-xs">
+                              {repo.language}
+                            </Badge>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
+        )}
 
         <Separator />
 

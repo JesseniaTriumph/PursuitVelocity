@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { Sparkles, Loader2, UserPlus } from "lucide-react";
+import { Sparkles, Loader2, UserPlus, BookOpen } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import UserAvatar from "./UserAvatar";
 import {
   fetchBuilderDirectory,
+  getBuilderLookbookPath,
   getBuilderProfilePath,
   rankBuilderMatches,
 } from "@/lib/builder-directory";
@@ -124,11 +125,18 @@ export default function AIMatches({ currentUser }) {
                 </div>
               )}
             </div>
-            <Link to={getBuilderProfilePath(match.person)}>
-              <button className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center hover:bg-primary/20 transition-colors">
+            <div className="flex items-center gap-2">
+              <Link to={getBuilderLookbookPath(match.person)}>
+                <button className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center hover:bg-muted/80 transition-colors">
+                  <BookOpen className="w-3.5 h-3.5" />
+                </button>
+              </Link>
+              <Link to={getBuilderProfilePath(match.person)}>
+                <button className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center hover:bg-primary/20 transition-colors">
                 <UserPlus className="w-3.5 h-3.5" />
-              </button>
-            </Link>
+                </button>
+              </Link>
+            </div>
           </motion.div>
         ))}
       </div>

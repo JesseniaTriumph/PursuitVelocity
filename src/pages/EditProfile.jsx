@@ -31,6 +31,12 @@ export default function EditProfile() {
   const [lookingFor, setLookingFor] = useState([]);
   const [needs, setNeeds] = useState([]);
   const [birthday, setBirthday] = useState("");
+  const [githubUrl, setGithubUrl] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [portfolioUrl, setPortfolioUrl] = useState("");
+  const [xUrl, setXUrl] = useState("");
+  const [calendlyUrl, setCalendlyUrl] = useState("");
+  const [resumeUrl, setResumeUrl] = useState("");
   const [avatar, setAvatar] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [customSkill, setCustomSkill] = useState("");
@@ -46,6 +52,12 @@ export default function EditProfile() {
       setLookingFor(user.looking_for || []);
       setNeeds(user.needs || []);
       setBirthday(user.birthday || "");
+      setGithubUrl(user.github_url || "");
+      setLinkedinUrl(user.linkedin_url || "");
+      setPortfolioUrl(user.portfolio_url || "");
+      setXUrl(user.x_url || "");
+      setCalendlyUrl(user.calendly_url || "");
+      setResumeUrl(user.resume_url || "");
       setAvatarPreview(user.avatar || null);
     }
   }, [user]);
@@ -67,7 +79,23 @@ export default function EditProfile() {
       const result = await base44.integrations.Core.UploadFile({ file: avatar });
       avatarUrl = result.file_url;
     }
-    await base44.auth.updateMe({ bio, skills, interests, goals, looking_for: lookingFor, needs, birthday, avatar: avatarUrl, onboarded: true });
+    await base44.auth.updateMe({
+      bio,
+      skills,
+      interests,
+      goals,
+      looking_for: lookingFor,
+      needs,
+      birthday,
+      github_url: githubUrl.trim(),
+      linkedin_url: linkedinUrl.trim(),
+      portfolio_url: portfolioUrl.trim(),
+      x_url: xUrl.trim(),
+      calendly_url: calendlyUrl.trim(),
+      resume_url: resumeUrl.trim(),
+      avatar: avatarUrl,
+      onboarded: true,
+    });
     navigate("/profile");
   };
 
@@ -109,6 +137,21 @@ export default function EditProfile() {
       <div className="space-y-2">
         <label className="text-sm font-semibold">Birthday (optional) 🎂</label>
         <input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} className="w-full bg-muted rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <label className="text-sm font-semibold">Public Links</label>
+          <p className="text-xs text-muted-foreground mt-1">
+            These appear on your profile and lookbook.
+          </p>
+        </div>
+        <input value={githubUrl} onChange={(e) => setGithubUrl(e.target.value)} placeholder="GitHub profile URL" className="w-full bg-muted rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+        <input value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} placeholder="LinkedIn URL" className="w-full bg-muted rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+        <input value={portfolioUrl} onChange={(e) => setPortfolioUrl(e.target.value)} placeholder="Portfolio URL" className="w-full bg-muted rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+        <input value={xUrl} onChange={(e) => setXUrl(e.target.value)} placeholder="X / Twitter URL" className="w-full bg-muted rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+        <input value={calendlyUrl} onChange={(e) => setCalendlyUrl(e.target.value)} placeholder="Calendly URL" className="w-full bg-muted rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+        <input value={resumeUrl} onChange={(e) => setResumeUrl(e.target.value)} placeholder="Resume URL" className="w-full bg-muted rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
       </div>
 
       {/* Skills */}
