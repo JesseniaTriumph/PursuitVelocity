@@ -16,7 +16,7 @@ import {
  *   <WelcomeTour forceOpen />  always open (e.g. from a "Take the tour" button)
  */
 
-const TOUR_KEY = "fellowship_tour_v1_seen";
+const TOUR_KEY = "velocity_tour_v1_seen";
 
 const STEPS = [
   {
