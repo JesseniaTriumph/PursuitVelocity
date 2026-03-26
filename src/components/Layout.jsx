@@ -5,9 +5,9 @@ import { base44 } from "@/api/base44Client";
 
 const navItems = [
   { path: "/", icon: LayoutDashboard, label: "Home" },
-  { path: "/builders", icon: Users, label: "Builders" },
-  { path: "/create", icon: Plus, label: "Post", isAction: true },
   { path: "/co-build", icon: Search, label: "Projects" },
+  { path: "/create", icon: Plus, label: "Post", isAction: true },
+  { path: "/builders", icon: Users, label: "Discover" },
   { path: "/messages", icon: MessageSquare, label: "Messages" },
 ];
 

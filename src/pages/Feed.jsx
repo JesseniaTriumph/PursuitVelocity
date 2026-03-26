@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import BuildUpdateCard from "../components/BuildUpdateCard";
 import AIMatches from "../components/AIMatches";
 import EmptyState from "../components/EmptyState";
+import WelcomeTour from "../components/WelcomeTour";
 import { Loader2, Plus, Zap, FolderOpen, ArrowRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import useCurrentUser from "../hooks/useCurrentUser";
@@ -80,6 +81,9 @@ export default function Dashboard() {
 
   return (
     <div className="px-4 py-6 space-y-8">
+
+      {/* First-visit feature walkthrough */}
+      <WelcomeTour />
 
       {/* Welcome */}
       {user && (

@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Loader2, Camera, X, Check } from "lucide-react";
+import { ArrowLeft, Loader2, Camera, X, Check, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import useCurrentUser from "../hooks/useCurrentUser";
+import WelcomeTour from "../components/WelcomeTour";
 
 const ALL_SKILLS = ["React", "Node.js", "Python", "AI/ML", "Design", "Backend", "Frontend", "Mobile", "Data", "DevOps", "Java", "Product"];
 const ALL_INTERESTS = ["Startups", "AI", "Social Impact", "EdTech", "FinTech", "Games", "Web3", "Health", "Education", "Sustainability"];
@@ -33,6 +34,7 @@ export default function EditProfile() {
   const [avatar, setAvatar] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [customSkill, setCustomSkill] = useState("");
+  const [tourOpen, setTourOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -165,6 +167,15 @@ export default function EditProfile() {
       <Button onClick={handleSubmit} disabled={submitting} className="w-full rounded-xl">
         {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Profile"}
       </Button>
+
+      <button
+        onClick={() => setTourOpen(true)}
+        className="w-full flex items-center justify-center gap-2 py-2.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <HelpCircle className="w-3.5 h-3.5" /> Take the app tour again
+      </button>
+
+      {tourOpen && <WelcomeTour forceOpen onClose={() => setTourOpen(false)} />}
     </div>
   );
 }
