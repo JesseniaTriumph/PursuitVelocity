@@ -83,13 +83,8 @@ export default function WelcomeTour({ forceOpen = false, onClose }) {
   const [step, setStep] = useState(0);
 
   useEffect(() => {
-    if (forceOpen) {
-      setOpen(true);
-      return;
-    }
-    const seen = localStorage.getItem(TOUR_KEY);
-    if (!seen) setOpen(true);
-  }, [forceOpen]);
+    setOpen(true);
+  }, []);
 
   function handleNext() {
     if (step < STEPS.length - 1) {
