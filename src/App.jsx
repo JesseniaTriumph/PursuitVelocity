@@ -19,6 +19,9 @@ import EventDetail from './pages/EventDetail';
 import Profile from './pages/Profile';
 import EditProfile from './pages/EditProfile';
 import Onboarding from './pages/Onboarding';
+import Builders from './pages/Builders';
+import Campfire from './pages/Campfire';
+import Resources from './pages/Resources';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -60,6 +63,9 @@ const AuthenticatedApp = () => {
         <Route path="/profile" element={<Profile />} />
         <Route path="/profile/:email" element={<Profile />} />
         <Route path="/edit-profile" element={<EditProfile />} />
+        <Route path="/builders" element={<Builders />} />
+        <Route path="/campfire" element={<Campfire />} />
+        <Route path="/resources" element={<Resources />} />
         <Route path="*" element={<PageNotFound />} />
       </Route>
       <Route path="/onboarding" element={<Onboarding />} />
