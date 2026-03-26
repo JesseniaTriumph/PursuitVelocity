@@ -26,9 +26,9 @@ export default function Layout() {
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-dm-sans font-semibold text-sm">F</span>
+              <span className="text-primary-foreground font-dm-sans font-semibold text-sm">V</span>
             </div>
-            <span className="font-dm-sans font-semibold text-lg tracking-tight">Fellowship</span>
+            <span className="font-dm-sans font-semibold text-lg tracking-tight">Velocity</span>
           </Link>
           <Link to="/profile">
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
