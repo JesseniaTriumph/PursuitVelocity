@@ -1,13 +1,13 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, MessageSquare, Search, Plus } from "lucide-react";
+import { LayoutDashboard, CalendarDays, MessageSquare, FolderOpen, Plus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 
 const navItems = [
   { path: "/", icon: LayoutDashboard, label: "Home" },
-  { path: "/co-build", icon: Search, label: "Projects" },
+  { path: "/co-build", icon: FolderOpen, label: "Projects" },
   { path: "/create", icon: Plus, label: "Post", isAction: true },
-  { path: "/builders", icon: Users, label: "Discover" },
+  { path: "/connect", icon: CalendarDays, label: "Connect" },
   { path: "/messages", icon: MessageSquare, label: "Messages" },
 ];
 
