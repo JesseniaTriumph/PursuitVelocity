@@ -33,27 +33,30 @@ export default function CreateProject() {
   const handleSubmit = async () => {
     if (!title.trim() || !description.trim() || !user) return;
     setSubmitting(true);
+    try {
+      let image_url = null;
+      if (imageFile) {
+        const result = await base44.integrations.Core.UploadFile({ file: imageFile });
+        image_url = result.file_url;
+      }
 
-    let image_url = null;
-    if (imageFile) {
-      const result = await base44.integrations.Core.UploadFile({ file: imageFile });
-      image_url = result.file_url;
+      await base44.entities.Project.create({
+        title: title.trim(),
+        description: description.trim(),
+        owner_name: user.full_name || "Anonymous",
+        owner_email: user.email,
+        owner_avatar: user.avatar || "",
+        skills_needed: skills,
+        max_team_size: maxTeamSize,
+        status: "looking_for_team",
+        team_size: 1,
+        image_url,
+      });
+
+      navigate("/co-build");
+    } finally {
+      setSubmitting(false);
     }
-
-    await base44.entities.Project.create({
-      title: title.trim(),
-      description: description.trim(),
-      owner_name: user.full_name || "Anonymous",
-      owner_email: user.email,
-      owner_avatar: user.avatar || "",
-      skills_needed: skills,
-      max_team_size: maxTeamSize,
-      status: "looking_for_team",
-      team_size: 1,
-      image_url,
-    });
-
-    navigate("/co-build");
   };
 
   const handleImageSelect = (e) => {
