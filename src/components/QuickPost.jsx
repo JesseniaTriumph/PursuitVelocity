@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Image, Send, X, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import UserAvatar from "./UserAvatar";
 
 const suggestedTags = ["buildinpublic", "AI", "frontend", "backend", "startup", "design"];
 
@@ -59,13 +60,12 @@ export default function QuickPost({ user, onPostCreated }) {
   return (
     <div className="bg-card border border-border/50 rounded-2xl overflow-hidden">
       <div className="flex items-start gap-3 p-4">
-        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
-          {user?.avatar ? (
-            <img src={user.avatar} alt="" className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-primary font-bold text-sm">{user?.full_name?.[0] || "?"}</span>
-          )}
-        </div>
+        <UserAvatar
+          name={user?.full_name || user?.email || "Builder"}
+          src={user?.avatar}
+          size={36}
+          className="rounded-full"
+        />
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}

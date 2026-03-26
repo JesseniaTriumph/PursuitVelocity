@@ -4,9 +4,15 @@ import { base44 } from "@/api/base44Client";
 import useCurrentUser from "../hooks/useCurrentUser";
 import { Button } from "@/components/ui/button";
 import EmptyState from "../components/EmptyState";
+import UserAvatar from "../components/UserAvatar";
 import {
   Loader2, Send, ArrowLeft, MessageSquare, Calendar,
 } from "lucide-react";
+import {
+  fetchBuilderDirectory,
+  findBuilderByIdentifier,
+  getBuilderProfilePath,
+} from "@/lib/builder-directory";
 
 /*
  * Messages — direct in-app messaging between builders.
@@ -35,7 +41,33 @@ export default function Messages() {
   const [loadingMsgs, setLoadingMsgs] = useState(false);
   const [sending, setSending] = useState(false);
   const [otherUser, setOtherUser] = useState(null);
+  const [directoryBuilders, setDirectoryBuilders] = useState([]);
   const bottomRef = useRef(null);
+
+  useEffect(() => {
+    if (!user?.email) return;
+
+    let isMounted = true;
+
+    const loadDirectory = async () => {
+      try {
+        const directory = await fetchBuilderDirectory();
+        if (isMounted) {
+          setDirectoryBuilders(directory.builders);
+        }
+      } catch {
+        if (isMounted) {
+          setDirectoryBuilders([]);
+        }
+      }
+    };
+
+    loadDirectory();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.email]);
 
   // Load all conversations for the current user
   useEffect(() => {
@@ -72,10 +104,16 @@ export default function Messages() {
       } else {
         // Fetch the other user's display name if possible
         let otherName = toEmail;
-        try {
-          const users = await base44.entities.User.filter({ email: toEmail });
-          if (users[0]?.full_name) otherName = users[0].full_name;
-        } catch {}
+        let builder = findBuilderByIdentifier(directoryBuilders, toEmail);
+
+        if (!builder) {
+          try {
+            const directory = await fetchBuilderDirectory();
+            builder = findBuilderByIdentifier(directory.builders, toEmail);
+          } catch {}
+        }
+
+        if (builder?.name) otherName = builder.name;
 
         const created = await base44.entities.Conversation.create({
           participant_emails: [user.email, toEmail],
@@ -90,7 +128,7 @@ export default function Messages() {
       setSearchParams({});
     };
     open();
-  }, [toEmail, user?.email, userLoading]);
+  }, [toEmail, user?.email, user?.full_name, userLoading, directoryBuilders]);
 
   // Load messages whenever the active conversation changes
   useEffect(() => {
@@ -118,9 +156,15 @@ export default function Messages() {
       const idx = activeConv.participant_emails.indexOf(otherEmail);
       const otherName =
         activeConv.participant_names?.[idx] || otherEmail || "Builder";
-      setOtherUser({ email: otherEmail, name: otherName });
+      const builder = findBuilderByIdentifier(directoryBuilders, otherEmail);
+      setOtherUser({
+        email: otherEmail,
+        name: builder?.name || otherName,
+        avatar: builder?.avatar || null,
+        calendly_url: builder?.calendly_url || null,
+      });
     }
-  }, [activeConv?.id]);
+  }, [activeConv, user?.email, directoryBuilders]);
 
   // Scroll to bottom when messages load or new one arrives
   useEffect(() => {
@@ -185,11 +229,12 @@ export default function Messages() {
             <ArrowLeft className="w-5 h-5" />
           </button>
 
-          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-            <span className="text-primary font-semibold text-sm">
-              {otherUser?.name?.[0] || "?"}
-            </span>
-          </div>
+          <UserAvatar
+            name={otherUser?.name || otherUser?.email || "Builder"}
+            src={otherUser?.avatar}
+            size={36}
+            className="rounded-full"
+          />
 
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-sm truncate">{otherUser?.name || "Builder"}</p>
@@ -207,7 +252,10 @@ export default function Messages() {
             </button>
           )}
 
-          <Link to={`/profile/${otherUser?.email}`} className="shrink-0">
+          <Link
+            to={otherUser?.email ? getBuilderProfilePath(otherUser) : "/profile"}
+            className="shrink-0"
+          >
             <Button variant="outline" size="sm" className="rounded-xl text-xs h-8">
               View Profile
             </Button>
@@ -322,9 +370,9 @@ export default function Messages() {
               (e) => e !== user?.email
             );
             const idx = conv.participant_emails?.indexOf(otherEmail) ?? 0;
+            const builder = findBuilderByIdentifier(directoryBuilders, otherEmail);
             const otherName =
-              conv.participant_names?.[idx] || otherEmail || "Builder";
-            const initial = otherName[0]?.toUpperCase() || "?";
+              builder?.name || conv.participant_names?.[idx] || otherEmail || "Builder";
             const preview = conv.last_message
               ? conv.last_message.length > 60
                 ? conv.last_message.slice(0, 60) + "…"
@@ -339,9 +387,12 @@ export default function Messages() {
                 className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-muted transition-colors text-left"
               >
                 <div className="relative shrink-0">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-primary font-semibold text-base">{initial}</span>
-                  </div>
+                  <UserAvatar
+                    name={otherName}
+                    src={builder?.avatar}
+                    size={48}
+                    className="rounded-full"
+                  />
                   {isUnread && (
                     <span className="absolute top-0 right-0 w-3 h-3 bg-primary rounded-full border-2 border-background" />
                   )}

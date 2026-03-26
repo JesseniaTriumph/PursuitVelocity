@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Heart, MessageCircle, Bookmark, CheckCircle2, HelpCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";

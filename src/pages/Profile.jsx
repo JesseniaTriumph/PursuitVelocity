@@ -1,20 +1,23 @@
 import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import PostCard from "../components/PostCard";
 import EmptyState from "../components/EmptyState";
 import UserAvatar from "../components/UserAvatar";
 import {
   Settings, Newspaper, Loader2, LogOut,
-  Linkedin, Mail, ExternalLink, Users, Plus, MessageSquare,
+  Linkedin, Mail, ExternalLink, Plus, MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import useCurrentUser from "../hooks/useCurrentUser";
 import { motion } from "framer-motion";
+import {
+  fetchBuilderDirectory,
+  findBuilderByIdentifier,
+} from "@/lib/builder-directory";
 
 export default function Profile() {
-  const { email } = useParams();
-  const navigate = useNavigate();
+  const { email: profileIdentifier } = useParams();
   const { user: currentUser } = useCurrentUser();
 
   const [profileUser, setProfileUser] = useState(null);
@@ -22,47 +25,86 @@ export default function Profile() {
   const [likes, setLikes] = useState([]);
   const [saved, setSaved] = useState([]);
   const [projects, setProjects] = useState([]);
-  const [collaborators, setCollaborators] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("posts");
 
-  const isOwnProfile = !email || email === currentUser?.email;
-  const targetEmail = isOwnProfile ? currentUser?.email : email;
+  const isOwnProfile =
+    !profileIdentifier ||
+    profileIdentifier === currentUser?.email ||
+    profileIdentifier === currentUser?.id;
 
   useEffect(() => {
-    if (!targetEmail) return;
+    if (isOwnProfile && !currentUser?.email) {
+      return;
+    }
+
+    let isMounted = true;
+
     const load = async () => {
       setLoading(true);
-      const [userPosts] = await Promise.all([
-        base44.entities.Post.filter({ author_email: targetEmail }, "-created_date"),
-      ]);
-      setPosts(userPosts);
+
+      let resolvedProfile = currentUser;
+      let targetEmail = currentUser?.email || null;
 
       if (!isOwnProfile) {
-        const users = await base44.entities.User.filter({ email: targetEmail });
-        setProfileUser(users[0] || { email: targetEmail, full_name: targetEmail });
-      } else {
-        setProfileUser(currentUser);
+        try {
+          const directory = await fetchBuilderDirectory();
+          resolvedProfile = findBuilderByIdentifier(directory.builders, profileIdentifier);
+          targetEmail =
+            resolvedProfile?.email ||
+            (profileIdentifier?.includes("@") ? profileIdentifier : null);
+        } catch {
+          resolvedProfile = null;
+          targetEmail = profileIdentifier?.includes("@") ? profileIdentifier : null;
+        }
       }
 
-      // Load projects this person owns or is on
-      try {
-        const allProjects = await base44.entities.Project.filter({ owner_email: targetEmail });
-        setProjects(allProjects);
-      } catch {}
+      if (!targetEmail) {
+        if (isMounted) {
+          setProfileUser(resolvedProfile);
+          setPosts([]);
+          setProjects([]);
+          setLoading(false);
+        }
+        return;
+      }
+
+      const requests = [
+        base44.entities.Post.filter({ author_email: targetEmail }, "-created_date"),
+        base44.entities.Project.filter({ owner_email: targetEmail }).catch(() => []),
+      ];
 
       if (currentUser?.email) {
-        const [userLikes, userSaved] = await Promise.all([
+        requests.push(
           base44.entities.Like.filter({ user_email: currentUser.email }),
-          base44.entities.SavedPost.filter({ user_email: currentUser.email }),
-        ]);
-        setLikes(userLikes);
-        setSaved(userSaved);
+          base44.entities.SavedPost.filter({ user_email: currentUser.email })
+        );
       }
+
+      const [userPosts, allProjects, userLikes = [], userSaved = []] = await Promise.all(requests);
+
+      if (!isMounted) {
+        return;
+      }
+
+      setPosts(userPosts);
+      setProjects(allProjects);
+      setProfileUser(
+        isOwnProfile
+          ? currentUser
+          : resolvedProfile || { email: targetEmail, full_name: targetEmail }
+      );
+      setLikes(userLikes);
+      setSaved(userSaved);
       setLoading(false);
     };
+
     load();
-  }, [targetEmail, currentUser?.email, isOwnProfile]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [profileIdentifier, currentUser, isOwnProfile]);
 
   const handleLikeToggle = async (postId) => {
     if (!currentUser?.email) return;
@@ -133,7 +175,7 @@ export default function Profile() {
               </>
             ) : (
               <>
-                <Link to={`/messages?to=${targetEmail}`}>
+                <Link to={`/messages?to=${profileUser?.email}`}>
                   <Button variant="outline" size="sm" className="rounded-xl gap-1.5 h-8 text-xs">
                     <MessageSquare className="w-3.5 h-3.5" /> Message
                   </Button>

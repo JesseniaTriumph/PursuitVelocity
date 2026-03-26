@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, Loader2, Camera, X, Check, HelpCircle } from "lucide-react";
+import { ArrowLeft, Loader2, Camera, Check, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import useCurrentUser from "../hooks/useCurrentUser";
 import WelcomeTour from "../components/WelcomeTour";

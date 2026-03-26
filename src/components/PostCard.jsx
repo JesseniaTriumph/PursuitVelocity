@@ -1,7 +1,5 @@
-import { useState, useEffect } from "react";
-import { Heart, MessageCircle, Bookmark, Share2, MoreHorizontal } from "lucide-react";
+import { Heart, MessageCircle, Bookmark } from "lucide-react";
 import { Link } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
 import { motion } from "framer-motion";
 import moment from "moment";
 

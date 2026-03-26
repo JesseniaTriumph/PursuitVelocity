@@ -1,100 +1,99 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Flame, Sparkles, Calendar, ChevronRight, RefreshCw, MessageSquare } from "lucide-react";
+import {
+  Flame,
+  Sparkles,
+  Calendar,
+  ChevronRight,
+  RefreshCw,
+  Loader2,
+  MessageSquare,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-
-/*
- * Camp Fire — Smart connection suggestions.
- * Shows builders you should meet based on:
- *  - Complementary skills to your projects
- *  - Shared interests / goals
- *  - Similar project stage
- *  - Attending the same events
- *
- * Replace mock data with Base44 entity queries + matching logic.
- */
-
-const MOCK_SUGGESTIONS = [
-  {
-    id: "1",
-    person: { id: "2", name: "Sofia Rivera", initials: "SR", goal: "Build AI infrastructure" },
-    matchReasons: [
-      { icon: "🤝", text: "Complementary skills — you need ML, she builds ML" },
-      { icon: "🔥", text: "Both working on AI tools" },
-      { icon: "🎯", text: "Both at similar project stage (in progress)" },
-    ],
-    sharedSkills: ["Python", "FastAPI"],
-    uniqueSkills: ["Machine Learning", "RAG pipelines"],
-    matchScore: 94,
-    project: "AI Study Buddy",
-    calendly_url: "https://calendly.com/sofiar",
-  },
-  {
-    id: "2",
-    person: { id: "6", name: "Amara Osei", initials: "AO", goal: "Design-first consumer products" },
-    matchReasons: [
-      { icon: "🎨", text: "You're building without a designer — she designs and codes" },
-      { icon: "🚀", text: "She's shipped a deployed product, you're in progress" },
-      { icon: "💡", text: "Shared interest in EdTech UX" },
-    ],
-    sharedSkills: ["React"],
-    uniqueSkills: ["Figma", "UI/UX Design", "Accessibility"],
-    matchScore: 88,
-    project: "AI Study Buddy",
-    calendly_url: "https://calendly.com/amarao",
-  },
-  {
-    id: "3",
-    person: { id: "4", name: "Priya Nair", initials: "PN", goal: "Build community tools" },
-    matchReasons: [
-      { icon: "👥", text: "Both building tools for communities" },
-      { icon: "📅", text: "Both attending the Pursuit Demo Day on April 5" },
-      { icon: "🧠", text: "Shared interest in low-friction UX" },
-    ],
-    sharedSkills: ["React", "Python"],
-    uniqueSkills: ["Product Management", "Django"],
-    matchScore: 79,
-    project: "Community Events App",
-    calendly_url: "https://calendly.com/priyan",
-  },
-];
-
-const MOCK_EVENT_MATCHES = [
-  {
-    event: "Pursuit Demo Day — April 5",
-    people: [
-      { id: "3", name: "Kai Thompson", initials: "KT" },
-      { id: "4", name: "Priya Nair", initials: "PN" },
-      { id: "5", name: "Devon Clarke", initials: "DC" },
-    ],
-  },
-  {
-    event: "NYC Hackathon — April 12",
-    people: [
-      { id: "2", name: "Sofia Rivera", initials: "SR" },
-      { id: "6", name: "Amara Osei", initials: "AO" },
-    ],
-  },
-];
+import UserAvatar from "../components/UserAvatar";
+import useCurrentUser from "../hooks/useCurrentUser";
+import {
+  clearBuilderDirectoryCache,
+  fetchBuilderDirectory,
+  getAvailableBuilders,
+  getBuilderProfilePath,
+  rankBuilderMatches,
+} from "@/lib/builder-directory";
 
 export default function Campfire() {
+  const { user, loading: userLoading } = useCurrentUser();
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [matches, setMatches] = useState([]);
+  const [availableBuilders, setAvailableBuilders] = useState([]);
+
+  useEffect(() => {
+    if (!user?.email) {
+      return;
+    }
+
+    loadSuggestions();
+  }, [user?.email]);
+
+  async function loadSuggestions({ force = false } = {}) {
+    setLoading(true);
+
+    try {
+      if (force) {
+        clearBuilderDirectoryCache();
+      }
+
+      const directory = await fetchBuilderDirectory({ force });
+      const currentBuilder =
+        directory.builders.find((builder) => builder.email === user?.email) ||
+        {
+          email: user?.email,
+          name: user?.full_name || user?.email || "Builder",
+          full_name: user?.full_name || user?.email || "Builder",
+          avatar: user?.avatar || null,
+          skills: user?.skills || [],
+          interests: user?.interests || [],
+          goals: user?.goals || [],
+          looking_for: user?.looking_for || [],
+          needs: user?.needs || [],
+          activeProject: null,
+        };
+
+      setMatches(rankBuilderMatches(currentBuilder, directory.builders, { limit: 4 }));
+      setAvailableBuilders(
+        getAvailableBuilders(directory.builders, {
+          limit: 4,
+          excludeEmail: currentBuilder.email,
+        })
+      );
+    } catch {
+      setMatches([]);
+      setAvailableBuilders([]);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handleRefresh() {
     setRefreshing(true);
-    // Replace with re-running the matching algorithm via Base44 edge function
-    await new Promise((r) => setTimeout(r, 800));
+    await loadSuggestions({ force: true });
     setRefreshing(false);
+  }
+
+  if (userLoading || loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
     <div className="p-4 md:p-6 max-w-3xl mx-auto">
-      {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -102,7 +101,7 @@ export default function Campfire() {
             <h1 className="text-2xl font-semibold">Camp Fire</h1>
           </div>
           <p className="text-muted-foreground text-sm">
-            Builders you should meet — matched by skills, projects, and shared goals.
+            Builders you should meet, ranked from your public profile, project needs, and shared interests.
           </p>
         </div>
         <Button
@@ -117,64 +116,97 @@ export default function Campfire() {
         </Button>
       </div>
 
-      {/* AI disclaimer */}
       <div className="flex items-start gap-3 p-3 rounded-xl bg-accent/50 border border-primary/20 mb-6 text-sm">
         <Sparkles className="h-4 w-4 text-primary mt-0.5 shrink-0" aria-hidden="true" />
         <p className="text-accent-foreground">
-          Suggestions are based on your project needs, shared interests, and activity — not an opaque score. You can always override or dismiss any match.
+          Suggestions come from the builder directory, active project skills, and what people say they want help with.
         </p>
       </div>
 
-      {/* Top suggestions */}
       <section className="space-y-4 mb-8">
         <h2 className="text-sm font-semibold text-caps text-muted-foreground">
           Suggested Connections
         </h2>
-        {MOCK_SUGGESTIONS.map((match) => (
-          <MatchCard key={match.id} match={match} />
-        ))}
+        {matches.length === 0 ? (
+          <Card>
+            <CardContent className="p-5 text-sm text-muted-foreground">
+              Add skills, interests, or a current project to improve your matches.
+            </CardContent>
+          </Card>
+        ) : (
+          matches.map((match) => <MatchCard key={match.person.id} match={match} />)
+        )}
       </section>
 
       <Separator className="mb-8" />
 
-      {/* Same-event matches */}
       <section className="space-y-4">
         <h2 className="text-sm font-semibold text-caps text-muted-foreground">
-          Attending the Same Events
+          Available to Connect
         </h2>
-        {MOCK_EVENT_MATCHES.map((group) => (
-          <Card key={group.event}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Calendar className="h-4 w-4 text-primary" aria-hidden="true" />
-                <p className="text-sm font-medium">{group.event}</p>
-              </div>
-              <div className="flex items-center gap-3 flex-wrap">
-                {group.people.map((person) => (
-                  <Link
-                    key={person.id}
-                    to={`/profile/${person.id}`}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full border bg-card hover:border-primary/40 transition-colors text-sm"
-                  >
-                    <Avatar className="h-5 w-5">
-                      <AvatarFallback className="text-[10px]">{person.initials}</AvatarFallback>
-                    </Avatar>
-                    {person.name}
-                  </Link>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground mt-3">
-                Connect before the event — turn attendance into collaboration.
-              </p>
+        {availableBuilders.length === 0 ? (
+          <Card>
+            <CardContent className="p-5 text-sm text-muted-foreground">
+              No builders with public meeting availability yet.
             </CardContent>
           </Card>
-        ))}
+        ) : (
+          availableBuilders.map((builder) => (
+            <Card key={builder.id}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <UserAvatar
+                    name={builder.name}
+                    src={builder.avatar}
+                    size={40}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <Link
+                      to={getBuilderProfilePath(builder)}
+                      className="text-sm font-semibold hover:text-primary transition-colors"
+                    >
+                      {builder.name}
+                    </Link>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {builder.goal}
+                    </p>
+                  </div>
+                  <Link to={`/messages?to=${builder.email}`}>
+                    <Button variant="outline" size="sm" className="gap-1.5">
+                      <MessageSquare className="h-4 w-4" aria-hidden="true" />
+                      Message
+                    </Button>
+                  </Link>
+                </div>
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {builder.skills.slice(0, 4).map((skill) => (
+                    <Badge key={skill} variant="secondary" className="text-xs">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+                {builder.calendly_url && (
+                  <Button
+                    size="sm"
+                    className="w-full gap-1.5 mt-3"
+                    onClick={() => window.open(builder.calendly_url, "_blank", "noopener,noreferrer")}
+                  >
+                    <Calendar className="h-4 w-4" aria-hidden="true" />
+                    Book a Slot
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          ))
+        )}
       </section>
     </div>
   );
 }
 
 function MatchCard({ match }) {
+  const profilePath = getBuilderProfilePath(match.person);
+
   function handleSchedule() {
     if (match.calendly_url) {
       window.open(match.calendly_url, "_blank", "noopener,noreferrer");
@@ -184,15 +216,16 @@ function MatchCard({ match }) {
   return (
     <Card className="card-interactive">
       <CardContent className="p-5">
-        {/* Header */}
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10 shrink-0">
-              <AvatarFallback className="text-sm font-medium">{match.person.initials}</AvatarFallback>
-            </Avatar>
+            <UserAvatar
+              name={match.person.name}
+              src={match.person.avatar}
+              size={40}
+            />
             <div>
               <Link
-                to={`/profile/${match.person.id}`}
+                to={profilePath}
                 className="text-sm font-semibold hover:text-primary transition-colors"
               >
                 {match.person.name}
@@ -200,44 +233,47 @@ function MatchCard({ match }) {
               <p className="text-xs text-muted-foreground">{match.person.goal}</p>
             </div>
           </div>
-          {/* Match score chip */}
           <div className="shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent border border-primary/20">
             <Sparkles className="h-3 w-3 text-primary" aria-hidden="true" />
-            <span className="text-xs font-semibold text-accent-foreground">{match.matchScore}% match</span>
+            <span className="text-xs font-semibold text-accent-foreground">
+              {match.matchScore}% match
+            </span>
           </div>
         </div>
 
-        {/* Match reasons */}
         <div className="space-y-1.5 mb-4">
-          {match.matchReasons.map((reason, i) => (
-            <div key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+          {match.matchReasons.map((reason, index) => (
+            <div key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
               <span aria-hidden="true">{reason.icon}</span>
               <span>{reason.text}</span>
             </div>
           ))}
         </div>
 
-        {/* Skills they bring */}
-        <div className="mb-4">
-          <p className="text-xs text-muted-foreground mb-1.5">They bring to your project:</p>
-          <div className="flex flex-wrap gap-1.5">
-            {match.uniqueSkills.map((s) => (
-              <Badge key={s} className="text-xs bg-accent text-accent-foreground border-primary/20 hover:bg-accent">
-                {s}
-              </Badge>
-            ))}
+        {match.uniqueSkills.length > 0 && (
+          <div className="mb-4">
+            <p className="text-xs text-muted-foreground mb-1.5">They bring to your project:</p>
+            <div className="flex flex-wrap gap-1.5">
+              {match.uniqueSkills.map((skill) => (
+                <Badge
+                  key={skill}
+                  className="text-xs bg-accent text-accent-foreground border-primary/20 hover:bg-accent"
+                >
+                  {skill}
+                </Badge>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Actions */}
         <div className="flex flex-col gap-2 pt-3 border-t">
           <div className="flex gap-2">
-            <Link to={`/profile/${match.person.id}`} className="flex-1">
+            <Link to={profilePath} className="flex-1">
               <Button variant="outline" size="sm" className="w-full">
                 View Profile <ChevronRight className="h-4 w-4 ml-auto" aria-hidden="true" />
               </Button>
             </Link>
-            <Link to={`/messages?to=${match.person.email || match.person.id}`} className="flex-1">
+            <Link to={`/messages?to=${match.person.email}`} className="flex-1">
               <Button variant="outline" size="sm" className="w-full gap-1.5">
                 <MessageSquare className="h-4 w-4" aria-hidden="true" /> Message
               </Button>
