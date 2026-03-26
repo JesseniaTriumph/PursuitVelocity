@@ -22,6 +22,7 @@ import Onboarding from './pages/Onboarding';
 import Builders from './pages/Builders';
 import Campfire from './pages/Campfire';
 import Resources from './pages/Resources';
+import Messages from './pages/Messages';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -66,6 +67,7 @@ const AuthenticatedApp = () => {
         <Route path="/builders" element={<Builders />} />
         <Route path="/campfire" element={<Campfire />} />
         <Route path="/resources" element={<Resources />} />
+        <Route path="/messages" element={<Messages />} />
         <Route path="*" element={<PageNotFound />} />
       </Route>
       <Route path="/onboarding" element={<Onboarding />} />
