@@ -1,13 +1,13 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Home, Users, Calendar, Search, Plus } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, Search, Plus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 
 const navItems = [
-  { path: "/", icon: Home, label: "Feed" },
+  { path: "/", icon: LayoutDashboard, label: "Dashboard" },
   { path: "/explore", icon: Search, label: "Explore" },
-  { path: "/create", icon: Plus, label: "Post", isAction: true },
-  { path: "/co-build", icon: Users, label: "Co-Build" },
+  { path: "/create", icon: Plus, label: "Update", isAction: true },
+  { path: "/co-build", icon: Users, label: "Projects" },
   { path: "/events", icon: Calendar, label: "Events" },
 ];
 
@@ -26,9 +26,9 @@ export default function Layout() {
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-space font-bold text-sm">P</span>
+              <span className="text-primary-foreground font-dm-sans font-semibold text-sm">F</span>
             </div>
-            <span className="font-space font-bold text-lg tracking-tight">Pursuit</span>
+            <span className="font-dm-sans font-semibold text-lg tracking-tight">Fellowship</span>
           </Link>
           <Link to="/profile">
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">

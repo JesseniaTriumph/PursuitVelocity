@@ -1,30 +1,32 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Image, X, Hash, Loader2, Sparkles, Zap, Target, HelpCircle } from "lucide-react";
+import { Image, X, Hash, Loader2, Sparkles, Zap, Target, HelpCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import useCurrentUser from "../hooks/useCurrentUser";
 import { motion, AnimatePresence } from "framer-motion";
 
 const postTypes = [
-  { id: "update", label: "Update", icon: Zap },
   { id: "progress", label: "Progress", icon: Sparkles },
   { id: "milestone", label: "Milestone", icon: Target },
+  { id: "update", label: "Update", icon: Zap },
   { id: "question", label: "Question", icon: HelpCircle },
 ];
 
-const suggestedTags = ["buildinpublic", "AI", "frontend", "backend", "startup", "design", "demoDay", "help"];
+const suggestedTags = ["buildinpublic", "AI", "frontend", "backend", "startup", "design", "shipped", "help"];
 
 export default function CreatePost() {
   const navigate = useNavigate();
   const { user } = useCurrentUser();
   const fileInputRef = useRef(null);
   const [content, setContent] = useState("");
+  const [completed, setCompleted] = useState("");
+  const [needed, setNeeded] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [hashtags, setHashtags] = useState([]);
   const [tagInput, setTagInput] = useState("");
-  const [postType, setPostType] = useState("update");
+  const [postType, setPostType] = useState("progress");
   const [submitting, setSubmitting] = useState(false);
 
   const handleImageSelect = (e) => {
@@ -69,8 +71,13 @@ export default function CreatePost() {
       image_url = result.file_url;
     }
 
+    // Build structured content
+    let fullContent = content.trim();
+    if (completed.trim()) fullContent += `\n✅ ${completed.trim()}`;
+    if (needed.trim()) fullContent += `\n🔍 ${needed.trim()}`;
+
     await base44.entities.Post.create({
-      content: content.trim(),
+      content: fullContent,
       image_url,
       hashtags,
       author_name: user.full_name || "Anonymous",
@@ -89,7 +96,7 @@ export default function CreatePost() {
   return (
     <div className="px-4 py-4 space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="font-space font-bold text-lg">New Post</h1>
+        <h1 className="font-dm-sans font-semibold text-lg">Build Update</h1>
         <Button
           onClick={handleSubmit}
           disabled={!canSubmit || submitting}
@@ -122,13 +129,38 @@ export default function CreatePost() {
       </div>
 
       {/* Content */}
-      <textarea
-        autoFocus
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        placeholder="What are you building? Share your progress..."
-        className="w-full min-h-[120px] bg-transparent text-sm resize-none focus:outline-none placeholder:text-muted-foreground/60 leading-relaxed"
-      />
+      <div className="space-y-3">
+        <textarea
+          autoFocus
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="What are you working on? Share your progress..."
+          className="w-full min-h-[100px] bg-transparent text-sm resize-none focus:outline-none placeholder:text-muted-foreground/60 leading-relaxed"
+        />
+
+        {/* Structured fields */}
+        <div className="space-y-2 p-3 bg-muted/50 rounded-xl border border-border/40">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">Optional structured info</p>
+          <div className="flex items-start gap-2">
+            <CheckCircle2 className="w-4 h-4 text-primary mt-2 flex-shrink-0" aria-hidden="true" />
+            <input
+              value={completed}
+              onChange={(e) => setCompleted(e.target.value)}
+              placeholder="What did you complete?"
+              className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-muted-foreground/60 py-1.5"
+            />
+          </div>
+          <div className="flex items-start gap-2">
+            <HelpCircle className="w-4 h-4 text-muted-foreground mt-2 flex-shrink-0" aria-hidden="true" />
+            <input
+              value={needed}
+              onChange={(e) => setNeeded(e.target.value)}
+              placeholder="What are you looking for?"
+              className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-muted-foreground/60 py-1.5"
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Image Preview */}
       <AnimatePresence>
