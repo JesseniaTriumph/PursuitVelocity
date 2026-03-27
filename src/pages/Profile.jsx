@@ -11,11 +11,17 @@ import {
 import { Button } from "@/components/ui/button";
 import useCurrentUser from "../hooks/useCurrentUser";
 import { motion } from "framer-motion";
+import PersonaInsightsPanel from "../components/PersonaInsightsPanel";
 import {
   fetchBuilderDirectory,
   findBuilderByIdentifier,
   getBuilderLookbookPath,
 } from "@/lib/builder-directory";
+import {
+  fetchBuilderInsight,
+  loadBuilderActivity,
+  shouldAnalyzeBuilder,
+} from "@/lib/persona-intelligence";
 
 export default function Profile() {
   const { email: profileIdentifier } = useParams();
@@ -26,6 +32,8 @@ export default function Profile() {
   const [likes, setLikes] = useState([]);
   const [saved, setSaved] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [insight, setInsight] = useState(null);
+  const [insightLoading, setInsightLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("posts");
 
@@ -65,31 +73,49 @@ export default function Profile() {
           setProfileUser(resolvedProfile);
           setPosts([]);
           setProjects([]);
+          setInsight(null);
+          setInsightLoading(false);
           setLoading(false);
         }
         return;
       }
 
-      const requests = [
-        base44.entities.Post.filter({ author_email: targetEmail }, "-created_date"),
-        base44.entities.Project.filter({ owner_email: targetEmail }).catch(() => []),
-      ];
+      const insightProfile =
+        isOwnProfile
+          ? currentUser
+          : resolvedProfile || {
+              email: targetEmail,
+              full_name: targetEmail,
+              name: targetEmail,
+              bio: "",
+              goal: "",
+              skills: [],
+              goals: [],
+              interests: [],
+              looking_for: [],
+              needs: [],
+              github_url: null,
+              linkedin_url: null,
+              portfolio_url: null,
+              x_url: null,
+            };
 
-      if (currentUser?.email) {
-        requests.push(
-          base44.entities.Like.filter({ user_email: currentUser.email }),
-          base44.entities.SavedPost.filter({ user_email: currentUser.email })
-        );
-      }
-
-      const [userPosts, allProjects, userLikes = [], userSaved = []] = await Promise.all(requests);
+      const [activity, userLikes, userSaved] = await Promise.all([
+        loadBuilderActivity(targetEmail),
+        currentUser?.email
+          ? base44.entities.Like.filter({ user_email: currentUser.email }).catch(() => [])
+          : Promise.resolve([]),
+        currentUser?.email
+          ? base44.entities.SavedPost.filter({ user_email: currentUser.email }).catch(() => [])
+          : Promise.resolve([]),
+      ]);
 
       if (!isMounted) {
         return;
       }
 
-      setPosts(userPosts);
-      setProjects(allProjects);
+      setPosts(activity.posts);
+      setProjects(activity.projects);
       setProfileUser(
         isOwnProfile
           ? currentUser
@@ -98,6 +124,27 @@ export default function Profile() {
       setLikes(userLikes);
       setSaved(userSaved);
       setLoading(false);
+
+      if (shouldAnalyzeBuilder(insightProfile, activity)) {
+        setInsightLoading(true);
+        try {
+          const result = await fetchBuilderInsight(insightProfile, activity);
+          if (isMounted) {
+            setInsight(result);
+          }
+        } catch {
+          if (isMounted) {
+            setInsight(null);
+          }
+        } finally {
+          if (isMounted) {
+            setInsightLoading(false);
+          }
+        }
+      } else if (isMounted) {
+        setInsight(null);
+        setInsightLoading(false);
+      }
     };
 
     load();
@@ -282,6 +329,16 @@ export default function Profile() {
               </span>
             ))}
           </div>
+        </div>
+      )}
+
+      {(insightLoading || insight?.analysis) && (
+        <div className="px-4 mb-4">
+          <PersonaInsightsPanel
+            insight={insight}
+            loading={insightLoading}
+            showPlanning={isOwnProfile}
+          />
         </div>
       )}
 

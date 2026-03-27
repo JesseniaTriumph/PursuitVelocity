@@ -14,21 +14,26 @@ import {
   MessageSquare,
   Zap,
   Loader2,
-  Sparkles,
 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn, truncate } from "@/lib/utils";
 import UserAvatar from "../components/UserAvatar";
+import PersonaInsightsPanel from "../components/PersonaInsightsPanel";
+import useCurrentUser from "../hooks/useCurrentUser";
 import {
   fetchBuilderDirectory,
   findBuilderByIdentifier,
   getBuilderLookbookPath,
   getBuilderProfilePath,
 } from "@/lib/builder-directory";
+import {
+  fetchBuilderInsight,
+  loadBuilderActivity,
+  shouldAnalyzeBuilder,
+} from "@/lib/persona-intelligence";
 
 const SOCIAL_DISPLAY = [
   { key: "linkedin_url", label: "LinkedIn", icon: Linkedin, color: "text-[#0A66C2]" },
@@ -133,7 +138,7 @@ function LookbookDirectory() {
             Explore the builders behind the work
           </h1>
           <p className="text-muted-foreground max-w-2xl">
-            Browse public builder pages, current projects, social links, and GitHub-backed profile insights.
+            Browse public builder pages, current projects, social links, and multi-source AI persona insights.
           </p>
         </div>
 
@@ -197,6 +202,7 @@ function LookbookDirectory() {
 }
 
 function LookbookProfile({ id }) {
+  const { user: currentUser } = useCurrentUser();
   const [loading, setLoading] = useState(true);
   const [insightLoading, setInsightLoading] = useState(false);
   const [profile, setProfile] = useState(null);
@@ -226,10 +232,7 @@ function LookbookProfile({ id }) {
           return;
         }
 
-        const [projectRows, postRows] = await Promise.all([
-          base44.entities.Project.filter({ owner_email: targetEmail }).catch(() => []),
-          base44.entities.Post.filter({ author_email: targetEmail }, "-created_date").catch(() => []),
-        ]);
+        const activity = await loadBuilderActivity(targetEmail);
 
         if (!isMounted) {
           return;
@@ -250,19 +253,16 @@ function LookbookProfile({ id }) {
           };
 
         setProfile(resolvedProfile);
-        setProjects(projectRows);
-        setUpdates(postRows.filter((post) => post.post_type !== "tutorial").slice(0, 5));
+        setProjects(activity.projects);
+        setUpdates(activity.posts.filter((post) => post.post_type !== "tutorial").slice(0, 5));
         setLoading(false);
 
-        if (resolvedProfile.github_url || projectRows.length > 0) {
+        if (shouldAnalyzeBuilder(resolvedProfile, activity)) {
           setInsightLoading(true);
           try {
-            const result = await base44.functions.invoke("builderInsights", {
-              ...resolvedProfile,
-              projects: projectRows,
-            });
+            const result = await fetchBuilderInsight(resolvedProfile, activity);
             if (isMounted) {
-              setInsight(result?.data ?? result);
+              setInsight(result);
             }
           } catch {
             if (isMounted) {
@@ -314,6 +314,7 @@ function LookbookProfile({ id }) {
     (project) => project.status === "looking_for_team" || project.status === "in_progress"
   );
   const completedProjects = projects.filter((project) => project.status === "completed");
+  const isOwnLookbook = Boolean(currentUser?.email && currentUser.email === profile.email);
 
   function handleShare() {
     if (navigator.share) {
@@ -413,74 +414,11 @@ function LookbookProfile({ id }) {
         {(insightLoading || insight?.analysis) && (
           <>
             <Separator />
-            <section className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  AI Builder Analysis
-                </h2>
-              </div>
-
-              {insightLoading ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Analyzing public projects and GitHub activity...
-                </div>
-              ) : (
-                <Card>
-                  <CardContent className="p-5 space-y-4">
-                    <p className="text-sm leading-relaxed text-foreground/90">
-                      {insight?.analysis?.summary}
-                    </p>
-                    {insight?.analysis?.strengths?.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {insight.analysis.strengths.map((strength) => (
-                          <Badge key={strength} variant="secondary" className="text-xs">
-                            {strength}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                    {insight?.analysis?.collaboration_pitch && (
-                      <p className="text-sm text-muted-foreground">
-                        {insight.analysis.collaboration_pitch}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-
-              {insight?.github?.repos?.length > 0 && (
-                <div className="grid grid-cols-1 gap-3">
-                  {insight.github.repos.slice(0, 4).map((repo) => (
-                    <Card key={repo.url} className="card-interactive">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <a
-                              href={repo.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="font-semibold text-sm hover:text-primary transition-colors"
-                            >
-                              {repo.name}
-                            </a>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {repo.description || "Public GitHub repository"}
-                            </p>
-                          </div>
-                          {repo.language && (
-                            <Badge variant="outline" className="text-xs">
-                              {repo.language}
-                            </Badge>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </section>
+            <PersonaInsightsPanel
+              insight={insight}
+              loading={insightLoading}
+              showPlanning={isOwnLookbook}
+            />
           </>
         )}
 
