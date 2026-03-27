@@ -5,6 +5,7 @@ import useCurrentUser from "../hooks/useCurrentUser";
 import { Button } from "@/components/ui/button";
 import EmptyState from "../components/EmptyState";
 import UserAvatar from "../components/UserAvatar";
+import BuilderNetworkLinks from "../components/BuilderNetworkLinks";
 import {
   Loader2, Send, ArrowLeft, MessageSquare, Calendar,
 } from "lucide-react";
@@ -162,6 +163,12 @@ export default function Messages() {
         name: builder?.name || otherName,
         avatar: builder?.avatar || null,
         calendly_url: builder?.calendly_url || null,
+        linkedin_url: builder?.linkedin_url || null,
+        x_url: builder?.x_url || null,
+        github_url: builder?.github_url || null,
+        portfolio_url: builder?.portfolio_url || null,
+        instagram_url: builder?.instagram_url || null,
+        tiktok_url: builder?.tiktok_url || null,
       });
     }
   }, [activeConv, user?.email, directoryBuilders]);
@@ -251,6 +258,8 @@ export default function Messages() {
               <Calendar className="w-5 h-5" />
             </button>
           )}
+
+          <BuilderNetworkLinks builder={otherUser} />
 
           <Link
             to={otherUser?.email ? getBuilderProfilePath(otherUser) : "/profile"}

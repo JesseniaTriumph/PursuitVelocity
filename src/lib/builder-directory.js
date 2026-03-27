@@ -140,6 +140,8 @@ function normalizeBuilder(builder) {
     cohort: builder?.cohort || null,
     github_url: builder?.github_url || null,
     linkedin_url: builder?.linkedin_url || null,
+    instagram_url: builder?.instagram_url || null,
+    tiktok_url: builder?.tiktok_url || null,
     calendly_url: builder?.calendly_url || null,
     portfolio_url: builder?.portfolio_url || null,
     x_url: builder?.x_url || null,

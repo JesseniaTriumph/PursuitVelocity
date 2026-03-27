@@ -3,8 +3,6 @@ import { Link } from "react-router-dom";
 import {
   Search,
   Calendar,
-  Github,
-  Linkedin,
   BookOpen,
   Loader2,
   MessageSquare,
@@ -22,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import UserAvatar from "../components/UserAvatar";
+import BuilderNetworkLinks from "../components/BuilderNetworkLinks";
 import {
   buildBuilderRole,
   fetchBuilderDirectory,
@@ -261,7 +260,8 @@ function BuilderCard({ builder }) {
               Open Lookbook
             </Button>
           </Link>
-          {builder.calendly_url ? (
+          <BuilderNetworkLinks builder={builder} className="justify-end" />
+          {builder.calendly_url && (
             <Button
               size="sm"
               className="w-full gap-1.5"
@@ -271,29 +271,6 @@ function BuilderCard({ builder }) {
               <Calendar className="h-4 w-4" aria-hidden="true" />
               Schedule Meeting
             </Button>
-          ) : (
-            <div className="flex gap-3 text-muted-foreground justify-end">
-              {builder.github_url && (
-                <a
-                  href={builder.github_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`${builder.name}'s GitHub`}
-                >
-                  <Github className="h-4 w-4" />
-                </a>
-              )}
-              {builder.linkedin_url && (
-                <a
-                  href={builder.linkedin_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`${builder.name}'s LinkedIn`}
-                >
-                  <Linkedin className="h-4 w-4" />
-                </a>
-              )}
-            </div>
           )}
         </div>
       </CardContent>

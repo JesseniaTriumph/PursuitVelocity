@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import UserAvatar from "../components/UserAvatar";
 import useCurrentUser from "../hooks/useCurrentUser";
+import BuilderNetworkLinks from "../components/BuilderNetworkLinks";
 import {
   clearBuilderDirectoryCache,
   fetchBuilderDirectory,
@@ -25,6 +26,7 @@ import {
   getBuilderProfilePath,
   rankBuilderMatches,
 } from "@/lib/builder-directory";
+import MeetingRequestDialog from "../components/MeetingRequestDialog";
 
 export default function Campfire() {
   const { user, loading: userLoading } = useCurrentUser();
@@ -205,6 +207,7 @@ export default function Campfire() {
                     </Button>
                   )}
                 </div>
+                <BuilderNetworkLinks builder={builder} className="mt-3" />
               </CardContent>
             </Card>
           ))
@@ -214,9 +217,10 @@ export default function Campfire() {
   );
 }
 
-function MatchCard({ match }) {
+function MatchCard({ match, currentUser }) {
   const profilePath = getBuilderProfilePath(match.person);
   const lookbookPath = getBuilderLookbookPath(match.person);
+  const [meetingOpen, setMeetingOpen] = useState(false);
 
   function handleSchedule() {
     if (match.calendly_url) {
@@ -296,6 +300,7 @@ function MatchCard({ match }) {
               Open Lookbook
             </Button>
           </Link>
+          <BuilderNetworkLinks builder={match.person} className="justify-end" />
           {match.calendly_url && (
             <Button
               size="sm"

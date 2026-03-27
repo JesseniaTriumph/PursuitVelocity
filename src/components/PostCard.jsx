@@ -1,9 +1,17 @@
-import { Heart, MessageCircle, Bookmark } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, MoreHorizontal, Trash2, Archive, Flag } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import moment from "moment";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-export default function PostCard({ post, currentUserEmail, onLikeToggle, onSaveToggle, isLiked, isSaved }) {
+export default function PostCard({ post, currentUserEmail, onLikeToggle, onSaveToggle, onDelete, onArchive, isLiked, isSaved }) {
+  const isOwn = post.author_email === currentUserEmail;
   const timeAgo = moment(post.created_date).fromNow();
 
   const postTypeColors = {
@@ -46,6 +54,30 @@ export default function PostCard({ post, currentUserEmail, onLikeToggle, onSaveT
             )}
           </div>
         </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" aria-label="Post options">
+              <MoreHorizontal className="w-4 h-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            {isOwn ? (
+              <>
+                <DropdownMenuItem className="text-muted-foreground gap-2 cursor-pointer" onClick={() => onArchive?.(post.id)}>
+                  <Archive className="w-4 h-4" /> Archive post
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-destructive gap-2 cursor-pointer" onClick={() => onDelete?.(post.id)}>
+                  <Trash2 className="w-4 h-4" /> Delete post
+                </DropdownMenuItem>
+              </>
+            ) : (
+              <DropdownMenuItem className="text-muted-foreground gap-2 cursor-pointer">
+                <Flag className="w-4 h-4" /> Report post
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Content */}

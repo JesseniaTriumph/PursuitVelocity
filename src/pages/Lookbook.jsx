@@ -6,6 +6,8 @@ import {
   Globe,
   Calendar,
   Twitter,
+  Instagram,
+  Video,
   FileText,
   Download,
   ExternalLink,
@@ -39,6 +41,8 @@ const SOCIAL_DISPLAY = [
   { key: "linkedin_url", label: "LinkedIn", icon: Linkedin, color: "text-[#0A66C2]" },
   { key: "github_url", label: "GitHub", icon: Github, color: "text-foreground" },
   { key: "x_url", label: "X", icon: Twitter, color: "text-foreground" },
+  { key: "instagram_url", label: "Instagram", icon: Instagram, color: "text-[#E4405F]" },
+  { key: "tiktok_url", label: "TikTok", icon: Video, color: "text-foreground" },
   { key: "portfolio_url", label: "Portfolio", icon: Globe, color: "text-primary" },
 ];
 
@@ -250,6 +254,13 @@ function LookbookProfile({ id }) {
             workTypes: [],
             cohort: null,
             github_url: null,
+            linkedin_url: null,
+            x_url: null,
+            instagram_url: null,
+            tiktok_url: null,
+            portfolio_url: null,
+            resume_url: null,
+            calendly_url: null,
           };
 
         setProfile(resolvedProfile);

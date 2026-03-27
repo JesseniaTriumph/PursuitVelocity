@@ -20,6 +20,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import UserAvatar from "../components/UserAvatar";
+import BuilderNetworkLinks from "../components/BuilderNetworkLinks";
 import { cn } from "@/lib/utils";
 import useCurrentUser from "../hooks/useCurrentUser";
 import {
@@ -363,6 +364,7 @@ function OpenMeetingCard({ builder }) {
             </Button>
           )}
         </div>
+        <BuilderNetworkLinks builder={builder} className="mt-3" />
       </CardContent>
     </Card>
   );

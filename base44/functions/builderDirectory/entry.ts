@@ -174,6 +174,8 @@ Deno.serve(async (req) => {
         const hasPublicProfileData =
           Boolean(user.bio) ||
           asStringArray(user.skills).length > 0 ||
+          Boolean(user.instagram_url) ||
+          Boolean(user.tiktok_url) ||
           Boolean(user.calendly_url) ||
           ownedProjects.length > 0;
 
@@ -202,6 +204,8 @@ Deno.serve(async (req) => {
           cohort: user.cohort || null,
           github_url: user.github_url || null,
           linkedin_url: user.linkedin_url || null,
+          instagram_url: user.instagram_url || null,
+          tiktok_url: user.tiktok_url || null,
           calendly_url: user.calendly_url || null,
           portfolio_url: user.portfolio_url || null,
           x_url: user.x_url || null,

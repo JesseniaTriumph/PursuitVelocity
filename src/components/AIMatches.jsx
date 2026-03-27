@@ -3,6 +3,7 @@ import { Sparkles, Loader2, UserPlus, BookOpen } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import UserAvatar from "./UserAvatar";
+import BuilderNetworkLinks from "./BuilderNetworkLinks";
 import {
   fetchBuilderDirectory,
   getBuilderLookbookPath,
@@ -124,6 +125,7 @@ export default function AIMatches({ currentUser }) {
                   ))}
                 </div>
               )}
+              <BuilderNetworkLinks builder={match.person} className="mt-2" />
             </div>
             <div className="flex items-center gap-2">
               <Link to={getBuilderLookbookPath(match.person)}>

@@ -115,6 +115,8 @@ export function shouldAnalyzeBuilder(builder, context = {}) {
       asArray(builder?.goals).length > 0 ||
       builder?.github_url ||
       builder?.linkedin_url ||
+      builder?.instagram_url ||
+      builder?.tiktok_url ||
       builder?.portfolio_url ||
       builder?.x_url ||
       asArray(context.projects).length > 0 ||
@@ -138,6 +140,8 @@ export function createBuilderInsightPayload(builder, context = {}) {
     work_types: asArray(builder?.workTypes),
     github_url: builder?.github_url || null,
     linkedin_url: builder?.linkedin_url || null,
+    instagram_url: builder?.instagram_url || null,
+    tiktok_url: builder?.tiktok_url || null,
     portfolio_url: builder?.portfolio_url || null,
     x_url: builder?.x_url || null,
     projects: asArray(context.projects).map(normalizeProject),

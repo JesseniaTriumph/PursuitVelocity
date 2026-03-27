@@ -14,6 +14,8 @@ type BuilderPayload = {
   work_types?: string[];
   github_url?: string | null;
   linkedin_url?: string | null;
+  instagram_url?: string | null;
+  tiktok_url?: string | null;
   portfolio_url?: string | null;
   x_url?: string | null;
   projects?: Array<{
@@ -50,6 +52,13 @@ type PublicSource = {
 };
 
 type GitHubContext = Awaited<ReturnType<typeof fetchGitHubContext>>;
+type PlatformOptimization = {
+  platform: string;
+  current_signal: string;
+  recommendation: string;
+  why_it_matters: string;
+  evidence: string[];
+};
 
 const PUBLIC_PAGE_HEADERS = {
   "User-Agent": "velocity-persona-intelligence",
@@ -314,6 +323,14 @@ function preferredChannels(builder: BuilderPayload) {
     channels.push("X");
   }
 
+  if (builder.instagram_url) {
+    channels.push("Instagram");
+  }
+
+  if (builder.tiktok_url) {
+    channels.push("TikTok");
+  }
+
   if (builder.portfolio_url) {
     channels.push("Portfolio / case study");
   }
@@ -323,6 +340,196 @@ function preferredChannels(builder: BuilderPayload) {
   }
 
   return channels;
+}
+
+function findPublicSource(publicSources: PublicSource[], source: string) {
+  return publicSources.find((item) => item.source === source) || null;
+}
+
+function compactEvidence(values: Array<string | null | undefined>, limit = 3) {
+  return values
+    .filter((value): value is string => typeof value === "string" && Boolean(value.trim()))
+    .map((value) => value.trim())
+    .slice(0, limit);
+}
+
+function summarizeSourceSignal(source: PublicSource | null, fallbackLabel: string) {
+  if (!source) {
+    return `${fallbackLabel} is not linked yet.`;
+  }
+
+  if (source.status !== "ok") {
+    return `${fallbackLabel} is linked, but public page content was limited (${source.note || source.status}).`;
+  }
+
+  const details = compactEvidence([
+    source.title ? `title: ${truncateText(source.title, 90)}` : "",
+    source.description ? `description: ${truncateText(source.description, 140)}` : "",
+    source.headings?.[0] ? `headline: ${truncateText(source.headings[0], 90)}` : "",
+  ]);
+
+  if (details.length === 0) {
+    return `${fallbackLabel} is linked and publicly reachable.`;
+  }
+
+  return `${fallbackLabel} is linked with visible signal from ${details.join(" | ")}.`;
+}
+
+function buildPlatformOptimizations(
+  builder: BuilderPayload,
+  githubData: GitHubContext | null,
+  publicSources: PublicSource[],
+  options: {
+    activeProject: NonNullable<BuilderPayload["projects"]>[number] | undefined;
+    projectTitles: string[];
+    posts: NonNullable<BuilderPayload["posts"]>;
+    upcomingEvents: NonNullable<BuilderPayload["upcoming_events"]>;
+    repoLanguages: string[];
+  }
+): PlatformOptimization[] {
+  const linkedinSource = findPublicSource(publicSources, "LinkedIn");
+  const xSource = findPublicSource(publicSources, "X");
+  const instagramSource = findPublicSource(publicSources, "Instagram");
+  const tiktokSource = findPublicSource(publicSources, "TikTok");
+  const portfolioSource = findPublicSource(publicSources, "Portfolio");
+  const activeProject = options.activeProject;
+  const latestPost = options.posts[0] || null;
+  const nextEvent = options.upcomingEvents[0] || null;
+  const topRepo = githubData?.repos?.[0] || null;
+  const hasLinkedSignals =
+    Boolean(builder.linkedin_url) ||
+    Boolean(builder.x_url) ||
+    Boolean(builder.instagram_url) ||
+    Boolean(builder.tiktok_url) ||
+    Boolean(builder.portfolio_url);
+
+  return [
+    {
+      platform: "LinkedIn",
+      current_signal: summarizeSourceSignal(linkedinSource, "LinkedIn"),
+      recommendation: builder.linkedin_url
+        ? `Tighten the headline and About section around ${builder.goal || activeProject?.title || "your current focus"}, and feature ${activeProject?.title || options.projectTitles[0] || "your strongest build"} with the stack ${compactEvidence([...asArray(builder.skills).slice(0, 3), ...options.repoLanguages.slice(0, 2)], 4).join(", ") || "you actually use"}.`
+        : `Add LinkedIn and frame it around ${builder.goal || activeProject?.title || "your current builder direction"}, your top build ${activeProject?.title || options.projectTitles[0] || "work"}, and the concrete skills ${asArray(builder.skills).slice(0, 4).join(", ") || "you want to be known for"}.`,
+      why_it_matters:
+        "It gives peers, partners, and employers a fast career-context read instead of forcing them to piece it together from scattered links.",
+      evidence: compactEvidence([
+        builder.goal ? `Current goal: ${builder.goal}` : "",
+        activeProject?.title ? `Active project: ${activeProject.title}` : "",
+        asArray(builder.skills).length > 0 ? `Skills listed: ${asArray(builder.skills).slice(0, 4).join(", ")}` : "",
+        linkedinSource?.description ? `Public page description: ${truncateText(linkedinSource.description, 120)}` : "",
+      ], 4),
+    },
+    {
+      platform: "X",
+      current_signal: summarizeSourceSignal(xSource, "X"),
+      recommendation: builder.x_url
+        ? `Use a pinned post or short thread that explains ${activeProject?.title || builder.goal || "what you're building now"}, the specific problem you care about, and one clear ask before ${nextEvent?.title || "your next milestone"}.`
+        : `If you want a distribution channel, add X and use it for short build logs, event previews, and partnership asks tied to ${activeProject?.title || builder.goal || "your current work"}.`,
+      why_it_matters:
+        "X is useful for lightweight momentum signals, fast collaboration asks, and making event activity visible before and after it happens.",
+      evidence: compactEvidence([
+        latestPost?.content ? `Recent Velocity post: ${truncateText(latestPost.content, 120)}` : "",
+        nextEvent?.title ? `Upcoming event: ${nextEvent.title}` : "",
+        activeProject?.title ? `Current build: ${activeProject.title}` : "",
+        xSource?.description ? `Public X description: ${truncateText(xSource.description, 120)}` : "",
+      ], 4),
+    },
+    {
+      platform: "Instagram",
+      current_signal: summarizeSourceSignal(instagramSource, "Instagram"),
+      recommendation: `Use Instagram for visual proof of the work around ${activeProject?.title || builder.goal || "your current build"}: demo clips, interface snapshots, event recaps, and collaboration asks that point people back to your LinkedIn, GitHub, or lookbook for depth.`,
+      why_it_matters:
+        "Instagram works best as a visual distribution layer when you already have real build artifacts, event presence, or behind-the-scenes material to share.",
+      evidence: compactEvidence([
+        builder.instagram_url ? "Instagram linked" : "",
+        activeProject?.title ? `Current build: ${activeProject.title}` : "",
+        nextEvent?.title ? `Upcoming event: ${nextEvent.title}` : "",
+        instagramSource?.description ? `Public Instagram description: ${truncateText(instagramSource.description, 120)}` : "",
+      ], 4),
+    },
+    {
+      platform: "TikTok",
+      current_signal: summarizeSourceSignal(tiktokSource, "TikTok"),
+      recommendation: `Use TikTok for short build-story clips tied to ${activeProject?.title || builder.goal || "your work"}: what you shipped, what broke, what you learned, and what kind of collaborator or customer feedback you want next.`,
+      why_it_matters:
+        "TikTok is useful when the person wants broader reach through short-form storytelling, but it should reinforce real work rather than replace professional proof surfaces.",
+      evidence: compactEvidence([
+        builder.tiktok_url ? "TikTok linked" : "",
+        activeProject?.title ? `Current build: ${activeProject.title}` : "",
+        latestPost?.content ? `Recent post topic: ${truncateText(latestPost.content, 120)}` : "",
+        tiktokSource?.description ? `Public TikTok description: ${truncateText(tiktokSource.description, 120)}` : "",
+      ], 4),
+    },
+    {
+      platform: "Portfolio",
+      current_signal: summarizeSourceSignal(portfolioSource, "Portfolio"),
+      recommendation: builder.portfolio_url
+        ? `Make the first screen immediately answer what you build, your role, the stack, and outcomes. Then turn ${activeProject?.title || options.projectTitles[0] || "your strongest project"} into a case study with demo, repo, responsibilities, and lessons learned.`
+        : `Add a portfolio or case-study page for ${activeProject?.title || options.projectTitles[0] || "your best build"} so people can see scope, role clarity, stack choices, and outcomes in one place.`,
+      why_it_matters:
+        "A portfolio is where peers can understand execution depth, taste, and product thinking without digging through multiple posts or repos.",
+      evidence: compactEvidence([
+        options.projectTitles[0] ? `Project signal: ${options.projectTitles.slice(0, 3).join(", ")}` : "",
+        portfolioSource?.headings?.length ? `Visible headings: ${portfolioSource.headings.slice(0, 2).join(" | ")}` : "",
+        portfolioSource?.description ? `Portfolio description: ${truncateText(portfolioSource.description, 120)}` : "",
+      ], 4),
+    },
+    {
+      platform: "GitHub",
+      current_signal: githubData
+        ? `GitHub analysis found ${githubData.repos.length} recent public repos${options.repoLanguages.length ? ` across ${options.repoLanguages.slice(0, 4).join(", ")}` : ""}.`
+        : builder.github_url
+          ? "GitHub is linked, but recent public repo context could not be analyzed."
+          : "GitHub is not linked yet.",
+      recommendation: githubData
+        ? `Make ${topRepo?.name || "your strongest repo"} unmistakably legible: tighten the README, show setup/demo/outcomes, and use your profile README or pinned repos to surface the 2-3 projects that best represent ${builder.goal || "your builder direction"}.`
+        : `Link GitHub and feature the repos that best represent ${builder.goal || "your current direction"}, with clear READMEs, live demos, and a short explanation of what you built yourself.`,
+      why_it_matters:
+        "GitHub is the fastest proof-of-work surface for technical peers deciding whether your implementation depth matches your profile story.",
+      evidence: compactEvidence([
+        topRepo?.name ? `Most recent repo: ${topRepo.name}` : "",
+        topRepo?.readme_excerpt ? `README signal: ${truncateText(topRepo.readme_excerpt, 120)}` : "",
+        options.repoLanguages.length > 0 ? `Languages used: ${options.repoLanguages.slice(0, 4).join(", ")}` : "",
+      ], 4),
+    },
+    {
+      platform: "Velocity",
+      current_signal: `${options.posts.length} public post${options.posts.length === 1 ? "" : "s"}, ${options.projectTitles.length} listed project${options.projectTitles.length === 1 ? "" : "s"}, and ${options.upcomingEvents.length} upcoming event${options.upcomingEvents.length === 1 ? "" : "s"} are informing the internal builder profile.`,
+      recommendation:
+        options.posts.length < 3
+          ? `Use Velocity as the structured build log: post progress, blockers, and milestone reflections for ${activeProject?.title || builder.goal || "your current work"} so peers can understand how to help.`
+          : `Turn your strongest Velocity updates into a clearer narrative arc: what you're building, what changed, what help you need, and what happened after events or launches.`,
+      why_it_matters:
+        "This is the native collaboration surface, so clearer internal signals improve matchmaking, peer understanding, and support requests.",
+      evidence: compactEvidence([
+        activeProject?.title ? `Current project: ${activeProject.title}` : "",
+        latestPost?.content ? `Recent post: ${truncateText(latestPost.content, 120)}` : "",
+        nextEvent?.title ? `Upcoming event: ${nextEvent.title}` : "",
+      ], 4),
+    },
+  ]
+    .filter((item) => item.evidence.length > 0 || item.platform === "LinkedIn" || item.platform === "GitHub")
+    .filter((item) => {
+      if (item.platform === "X") {
+        return Boolean(builder.x_url || activeProject || nextEvent || latestPost);
+      }
+      if (item.platform === "Instagram") {
+        return Boolean(builder.instagram_url);
+      }
+      if (item.platform === "TikTok") {
+        return Boolean(builder.tiktok_url);
+      }
+      if (item.platform === "Portfolio") {
+        return Boolean(builder.portfolio_url || options.projectTitles.length > 0);
+      }
+      if (item.platform === "Velocity") {
+        return Boolean(options.projectTitles.length > 0 || options.posts.length > 0 || options.upcomingEvents.length > 0);
+      }
+      if (item.platform === "LinkedIn") {
+        return Boolean(builder.linkedin_url || builder.goal || activeProject || hasLinkedSignals);
+      }
+      return true;
+    });
 }
 
 function buildSourceNotes(
@@ -466,6 +673,13 @@ function buildFallbackAnalysis(
   ].filter(Boolean);
 
   const channels = preferredChannels(builder);
+  const platformOptimizations = buildPlatformOptimizations(builder, githubData, publicSources, {
+    activeProject,
+    projectTitles,
+    posts,
+    upcomingEvents,
+    repoLanguages,
+  });
   const contentCalendar = [
     upcomingEvents[0]
       ? {
@@ -475,6 +689,7 @@ function buildFallbackAnalysis(
           topic: `What I am bringing to ${upcomingEvents[0].title || "this event"} and who I want to meet`,
           rationale: "Helps peers understand collaboration intent before the event.",
           call_to_action: "Invite builders with complementary skills to connect.",
+          supporting_signal: `Upcoming event: ${upcomingEvents[0].title || "next event"}`,
         }
       : null,
     activeProject
@@ -485,6 +700,7 @@ function buildFallbackAnalysis(
           topic: `Current progress on ${activeProject.title || "the main build"} plus the next milestone`,
           rationale: "Makes current execution visible and creates easy entry points for support.",
           call_to_action: "Ask for one concrete intro, feedback pass, or collaborator skill.",
+          supporting_signal: `Active project: ${activeProject.title || "current build"}`,
         }
       : null,
     githubData?.repos?.[0]
@@ -495,6 +711,18 @@ function buildFallbackAnalysis(
           topic: `What changed in ${githubData.repos[0].name} and what you learned while building it`,
           rationale: "Shows implementation depth and thought process, not just outcomes.",
           call_to_action: "Point peers to the repo, demo, or issue list for feedback.",
+          supporting_signal: `Recent repo activity: ${githubData.repos[0].name}`,
+        }
+      : null,
+    posts[0]
+      ? {
+          timing: "After your next reflection-worthy moment",
+          channel: channels.includes("LinkedIn") ? "LinkedIn" : channels[0] || "Velocity post",
+          format: "Lesson learned",
+          topic: `What changed in your thinking while working on ${activeProject?.title || posts[0].post_type || "the current build"}`,
+          rationale: "Transforms raw activity into professional signal and makes your process more relatable.",
+          call_to_action: "Close with the decision you are weighing or the input you want from peers.",
+          supporting_signal: `Recent public post activity: ${posts[0].post_type || "update"}`,
         }
       : null,
   ].filter(Boolean);
@@ -519,9 +747,11 @@ function buildFallbackAnalysis(
     support_opportunities: supportOpportunities,
     project_focus: projectTitles,
     optimization_recommendations: optimizationRecommendations,
+    platform_optimizations: platformOptimizations,
     content_calendar: contentCalendar,
     profile_gaps: [
       !builder.linkedin_url ? "Add LinkedIn if you want stronger career context." : "",
+      !builder.x_url ? "Add X if you want a lightweight public narrative for shipping, events, and collaboration asks." : "",
       !builder.portfolio_url ? "Add a portfolio or case-study link to make outcomes and role clarity obvious." : "",
       !builder.github_url ? "Link GitHub so peers can inspect implementation depth." : "",
     ].filter(Boolean),
@@ -554,6 +784,8 @@ Deno.serve(async (req) => {
       fetchPublicPageContext("Portfolio", builder.portfolio_url),
       fetchPublicPageContext("LinkedIn", builder.linkedin_url),
       fetchPublicPageContext("X", builder.x_url),
+      fetchPublicPageContext("Instagram", builder.instagram_url),
+      fetchPublicPageContext("TikTok", builder.tiktok_url),
     ]);
 
     let analysis = buildFallbackAnalysis(builder, githubData, publicSources);
@@ -583,6 +815,8 @@ Goals:
 1. Help peers understand the breadth of this person's builds, skills, experience signals, and current momentum.
 2. Help the builder understand how to improve their public profile and collaboration readiness.
 3. Suggest a short content calendar tied to upcoming events, active builds, recent posts, and available public channels.
+4. Give platform-specific recommendations for LinkedIn, X, portfolio, GitHub, and the native Velocity profile when evidence exists.
+5. Instagram and TikTok are optional creator/distribution channels. Only recommend them when they are linked or clearly in use.
 
 Builder profile:
 Name: ${builder.name || "Unknown"}
@@ -604,6 +838,14 @@ ${(builder.posts || []).slice(0, 6).map((post) => `- ${post.post_type || "update
 Upcoming events:
 ${(builder.upcoming_events || []).slice(0, 6).map((event) => `- ${event.relationship || "attending"} ${event.title || "event"} on ${event.date || "unknown date"} | type: ${event.event_type || "unknown"} | location: ${event.location || "none"} | description: ${truncateText(event.description, 160) || "None"}`).join("\n") || "None"}
 
+Primary professional channels:
+- LinkedIn: ${builder.linkedin_url || "None"}
+- X: ${builder.x_url || "None"}
+
+Optional creator/distribution channels:
+- Instagram: ${builder.instagram_url || "None"}
+- TikTok: ${builder.tiktok_url || "None"}
+
 GitHub:
 ${githubData ? `Username: ${githubData.username}
 Bio: ${githubData.profile.bio || "None"}
@@ -615,7 +857,7 @@ ${githubData.repos.map((repo) => `- ${repo.name}: ${repo.description || "No desc
 Other public links:
 ${serializePublicSources(publicSources)}
 
-Return concise JSON for a public profile. Keep recommendations specific and actionable.`,
+Return concise JSON for a public profile. Keep recommendations specific and actionable. Treat LinkedIn and X as primary professional/discovery channels. Only give Instagram or TikTok recommendations if they are linked or clearly supported by the available public signals.`,
           response_json_schema: {
             type: "object",
             properties: {
@@ -653,6 +895,23 @@ Return concise JSON for a public profile. Keep recommendations specific and acti
                   required: ["title", "detail"],
                 },
               },
+              platform_optimizations: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    platform: { type: "string" },
+                    current_signal: { type: "string" },
+                    recommendation: { type: "string" },
+                    why_it_matters: { type: "string" },
+                    evidence: {
+                      type: "array",
+                      items: { type: "string" },
+                    },
+                  },
+                  required: ["platform", "current_signal", "recommendation", "why_it_matters", "evidence"],
+                },
+              },
               content_calendar: {
                 type: "array",
                 items: {
@@ -664,8 +923,9 @@ Return concise JSON for a public profile. Keep recommendations specific and acti
                     topic: { type: "string" },
                     rationale: { type: "string" },
                     call_to_action: { type: "string" },
+                    supporting_signal: { type: "string" },
                   },
-                  required: ["timing", "channel", "format", "topic", "rationale", "call_to_action"],
+                  required: ["timing", "channel", "format", "topic", "rationale", "call_to_action", "supporting_signal"],
                 },
               },
               profile_gaps: {
@@ -683,6 +943,7 @@ Return concise JSON for a public profile. Keep recommendations specific and acti
               "support_opportunities",
               "project_focus",
               "optimization_recommendations",
+              "platform_optimizations",
               "content_calendar",
               "profile_gaps",
             ],

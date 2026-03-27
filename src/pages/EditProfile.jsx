@@ -35,6 +35,8 @@ export default function EditProfile() {
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [portfolioUrl, setPortfolioUrl] = useState("");
   const [xUrl, setXUrl] = useState("");
+  const [instagramUrl, setInstagramUrl] = useState("");
+  const [tiktokUrl, setTiktokUrl] = useState("");
   const [calendlyUrl, setCalendlyUrl] = useState("");
   const [resumeUrl, setResumeUrl] = useState("");
   const [avatar, setAvatar] = useState(null);
@@ -56,6 +58,8 @@ export default function EditProfile() {
       setLinkedinUrl(user.linkedin_url || "");
       setPortfolioUrl(user.portfolio_url || "");
       setXUrl(user.x_url || "");
+      setInstagramUrl(user.instagram_url || "");
+      setTiktokUrl(user.tiktok_url || "");
       setCalendlyUrl(user.calendly_url || "");
       setResumeUrl(user.resume_url || "");
       setAvatarPreview(user.avatar || null);
@@ -91,6 +95,8 @@ export default function EditProfile() {
       linkedin_url: linkedinUrl.trim(),
       portfolio_url: portfolioUrl.trim(),
       x_url: xUrl.trim(),
+      instagram_url: instagramUrl.trim(),
+      tiktok_url: tiktokUrl.trim(),
       calendly_url: calendlyUrl.trim(),
       resume_url: resumeUrl.trim(),
       avatar: avatarUrl,
@@ -143,13 +149,15 @@ export default function EditProfile() {
         <div>
           <label className="text-sm font-semibold">Public Links</label>
           <p className="text-xs text-muted-foreground mt-1">
-            These appear on your profile and lookbook.
+            These appear on your profile and lookbook. LinkedIn and X are the primary professional channels. Instagram and TikTok are optional if you want creator-style content suggestions too.
           </p>
         </div>
         <input value={githubUrl} onChange={(e) => setGithubUrl(e.target.value)} placeholder="GitHub profile URL" className="w-full bg-muted rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
         <input value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} placeholder="LinkedIn URL" className="w-full bg-muted rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
-        <input value={portfolioUrl} onChange={(e) => setPortfolioUrl(e.target.value)} placeholder="Portfolio URL" className="w-full bg-muted rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
         <input value={xUrl} onChange={(e) => setXUrl(e.target.value)} placeholder="X / Twitter URL" className="w-full bg-muted rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+        <input value={instagramUrl} onChange={(e) => setInstagramUrl(e.target.value)} placeholder="Instagram URL (optional)" className="w-full bg-muted rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+        <input value={tiktokUrl} onChange={(e) => setTiktokUrl(e.target.value)} placeholder="TikTok URL (optional)" className="w-full bg-muted rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+        <input value={portfolioUrl} onChange={(e) => setPortfolioUrl(e.target.value)} placeholder="Portfolio URL" className="w-full bg-muted rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
         <input value={calendlyUrl} onChange={(e) => setCalendlyUrl(e.target.value)} placeholder="Calendly URL" className="w-full bg-muted rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
         <input value={resumeUrl} onChange={(e) => setResumeUrl(e.target.value)} placeholder="Resume URL" className="w-full bg-muted rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
       </div>

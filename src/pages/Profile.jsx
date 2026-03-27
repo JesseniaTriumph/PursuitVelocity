@@ -6,7 +6,7 @@ import EmptyState from "../components/EmptyState";
 import UserAvatar from "../components/UserAvatar";
 import {
   Settings, Newspaper, Loader2, LogOut,
-  Linkedin, Mail, ExternalLink, Plus, MessageSquare, Github, Globe, Twitter,
+  Linkedin, Mail, ExternalLink, Plus, MessageSquare, Github, Globe, Twitter, Instagram, Video,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import useCurrentUser from "../hooks/useCurrentUser";
@@ -96,6 +96,8 @@ export default function Profile() {
               needs: [],
               github_url: null,
               linkedin_url: null,
+              instagram_url: null,
+              tiktok_url: null,
               portfolio_url: null,
               x_url: null,
             };
@@ -304,6 +306,32 @@ export default function Profile() {
               >
                 <Twitter className="w-3.5 h-3.5" />
                 <span>X</span>
+                <ExternalLink className="w-3 h-3 opacity-60" />
+              </a>
+            )}
+            {profileUser?.instagram_url && (
+              <a
+                href={profileUser.instagram_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-2.5 h-8 rounded-xl border text-xs text-muted-foreground hover:text-[#E4405F] transition-colors"
+                aria-label="Instagram profile"
+              >
+                <Instagram className="w-3.5 h-3.5" />
+                <span>Instagram</span>
+                <ExternalLink className="w-3 h-3 opacity-60" />
+              </a>
+            )}
+            {profileUser?.tiktok_url && (
+              <a
+                href={profileUser.tiktok_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-2.5 h-8 rounded-xl border text-xs text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="TikTok profile"
+              >
+                <Video className="w-3.5 h-3.5" />
+                <span>TikTok</span>
                 <ExternalLink className="w-3 h-3 opacity-60" />
               </a>
             )}

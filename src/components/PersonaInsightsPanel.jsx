@@ -36,6 +36,67 @@ function InsightList({ title, icon: Icon, items }) {
   );
 }
 
+function PlatformOptimizationList({ items }) {
+  if (!Array.isArray(items) || items.length === 0) {
+    return null;
+  }
+
+  return (
+    <Card>
+      <CardContent className="p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <Lightbulb className="h-4 w-4 text-primary" />
+          <h3 className="text-sm font-semibold">Platform-Specific Improvements</h3>
+        </div>
+        <div className="space-y-3">
+          {items.map((item) => (
+            <div key={item.platform} className="rounded-2xl border bg-muted/30 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-[11px]">
+                  {item.platform}
+                </Badge>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Current signal
+                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {item.current_signal}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Recommendation
+                </p>
+                <p className="text-sm leading-relaxed">
+                  {item.recommendation}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Why it matters
+                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {item.why_it_matters}
+                </p>
+              </div>
+              {Array.isArray(item.evidence) && item.evidence.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {item.evidence.map((evidence) => (
+                    <Badge key={`${item.platform}-${evidence}`} variant="secondary" className="text-[11px] whitespace-normal">
+                      {evidence}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function PersonaInsightsPanel({
   insight,
   loading,
@@ -203,6 +264,10 @@ export default function PersonaInsightsPanel({
             </div>
           )}
 
+          {showPlanning && analysis.platform_optimizations?.length > 0 && (
+            <PlatformOptimizationList items={analysis.platform_optimizations} />
+          )}
+
           {showPlanning && analysis.optimization_recommendations?.length > 0 && (
             <Card>
               <CardContent className="p-5 space-y-4">
@@ -249,6 +314,11 @@ export default function PersonaInsightsPanel({
                       <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
                         {item.rationale}
                       </p>
+                      {item.supporting_signal && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Based on: {item.supporting_signal}
+                        </p>
+                      )}
                       <p className="text-xs text-primary mt-2">
                         CTA: {item.call_to_action}
                       </p>
