@@ -4,6 +4,8 @@ import BuildUpdateCard from "../components/BuildUpdateCard";
 import AIMatches from "../components/AIMatches";
 import EmptyState from "../components/EmptyState";
 import WelcomeTour from "../components/WelcomeTour";
+import XPProgressBar from "../components/XPProgressBar";
+import { ProfileCompletenessBanner } from "../components/ProfileCompleteness";
 import { Loader2, Plus, Zap, FolderOpen, ArrowRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import useCurrentUser from "../hooks/useCurrentUser";
@@ -71,6 +73,18 @@ export default function Dashboard() {
     }
   };
 
+  const handleDelete = async (postId) => {
+    if (!user?.email) return;
+    await base44.entities.Post.delete(postId);
+    setPosts((prev) => prev.filter((p) => p.id !== postId));
+  };
+
+  const handleArchive = async (postId) => {
+    if (!user?.email) return;
+    await base44.entities.Post.update(postId, { archived: true });
+    setPosts((prev) => prev.filter((p) => p.id !== postId));
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -93,6 +107,14 @@ export default function Dashboard() {
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Here's what's happening with your builds.</p>
         </div>
+      )}
+
+      {user && <ProfileCompletenessBanner user={user} threshold={3} />}
+
+      {user?.email && (
+        <section className="p-4 bg-card border border-border/60 rounded-xl shadow-xs">
+          <XPProgressBar userEmail={user.email} />
+        </section>
       )}
 
       {/* Quick Actions */}
@@ -197,6 +219,8 @@ export default function Dashboard() {
                 isSaved={saved.some((s) => s.post_id === post.id)}
                 onLikeToggle={handleLikeToggle}
                 onSaveToggle={handleSaveToggle}
+                onDelete={handleDelete}
+                onArchive={handleArchive}
               />
             ))}
           </div>

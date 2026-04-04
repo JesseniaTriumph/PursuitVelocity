@@ -20,7 +20,7 @@ const NEEDS_OPTIONS = [
   { id: "guidance", label: "Guidance / Mentorship", emoji: "🧠" },
 ];
 
-const steps = ["identity", "skills", "interests", "why", "needs"];
+const steps = ["identity", "skills", "interests", "why", "needs", "links"];
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -34,6 +34,9 @@ export default function Onboarding() {
   const [goals, setGoals] = useState([]);
   const [lookingFor, setLookingFor] = useState([]);
   const [needs, setNeeds] = useState([]);
+  const [githubUrl, setGithubUrl] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [calendlyUrl, setCalendlyUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const toggleItem = (arr, setArr, item) => {
@@ -63,9 +66,12 @@ export default function Onboarding() {
       looking_for: lookingFor,
       needs,
       avatar: avatarUrl,
+      github_url: githubUrl.trim() || null,
+      linkedin_url: linkedinUrl.trim() || null,
+      calendly_url: calendlyUrl.trim() || null,
       onboarded: true,
     });
-    navigate("/");
+    navigate("/campfire");
   };
 
   const canContinue = () => {
@@ -152,7 +158,7 @@ export default function Onboarding() {
                   <button
                     key={s}
                     onClick={() => toggleItem(skills, setSkills, s)}
-                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                    className={`px-4 py-3 min-h-[44px] rounded-xl text-sm font-medium transition-all ${
                       skills.includes(s) ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                     }`}
                   >
@@ -177,7 +183,7 @@ export default function Onboarding() {
                     <button
                       key={s}
                       onClick={() => toggleItem(interests, setInterests, s)}
-                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                      className={`px-4 py-3 min-h-[44px] rounded-xl text-sm font-medium transition-all ${
                         interests.includes(s) ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                       }`}
                     >
@@ -193,7 +199,7 @@ export default function Onboarding() {
                     <button
                       key={s}
                       onClick={() => toggleItem(goals, setGoals, s)}
-                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                      className={`px-4 py-3 min-h-[44px] rounded-xl text-sm font-medium transition-all ${
                         goals.includes(s) ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"
                       }`}
                     >
@@ -253,8 +259,50 @@ export default function Onboarding() {
                     {needs.includes(opt.id) && <Check className="ml-auto w-4 h-4 text-primary" />}
                   </button>
                 ))}
+              </div>
             </div>
-          </div>
+          )}
+
+          {step === 5 && (
+            <div className="space-y-5">
+              <div>
+                <h1 className="font-space font-bold text-2xl mb-1">Add your links 🔗</h1>
+                <p className="text-muted-foreground text-sm">All optional — helps others find and connect with you</p>
+              </div>
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">GitHub</label>
+                  <input
+                    type="url"
+                    value={githubUrl}
+                    onChange={(e) => setGithubUrl(e.target.value)}
+                    placeholder="https://github.com/yourusername"
+                    className="w-full bg-muted rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">LinkedIn</label>
+                  <input
+                    type="url"
+                    value={linkedinUrl}
+                    onChange={(e) => setLinkedinUrl(e.target.value)}
+                    placeholder="https://linkedin.com/in/yourname"
+                    className="w-full bg-muted rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Calendly <span className="text-primary font-medium normal-case tracking-normal">— share your availability</span></label>
+                  <input
+                    type="url"
+                    value={calendlyUrl}
+                    onChange={(e) => setCalendlyUrl(e.target.value)}
+                    placeholder="https://calendly.com/yourname"
+                    className="w-full bg-muted rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                  <p className="text-[11px] text-muted-foreground">Adding Calendly makes you visible in "Available to Connect" on Campfire</p>
+                </div>
+              </div>
+            </div>
           )}
         </motion.div>
       </AnimatePresence>
