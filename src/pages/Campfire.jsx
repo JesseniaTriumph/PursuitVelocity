@@ -27,6 +27,7 @@ import {
   rankBuilderMatches,
 } from "@/lib/builder-directory";
 import MeetingRequestDialog from "../components/MeetingRequestDialog";
+import { ProfileCompletenessBanner } from "../components/ProfileCompleteness";
 
 export default function Campfire() {
   const { user, loading: userLoading } = useCurrentUser();
@@ -120,6 +121,8 @@ export default function Campfire() {
         </Button>
       </div>
 
+      {user && <ProfileCompletenessBanner user={user} threshold={3} className="mb-4" />}
+
       <div className="flex items-start gap-3 p-3 rounded-xl bg-accent/50 border border-primary/20 mb-6 text-sm">
         <Sparkles className="h-4 w-4 text-primary mt-0.5 shrink-0" aria-hidden="true" />
         <p className="text-accent-foreground">
@@ -138,7 +141,7 @@ export default function Campfire() {
             </CardContent>
           </Card>
         ) : (
-          matches.map((match) => <MatchCard key={match.person.id} match={match} />)
+          matches.map((match) => <MatchCard key={match.person.id} match={match} currentUser={user} />)
         )}
       </section>
 
@@ -223,8 +226,8 @@ function MatchCard({ match, currentUser }) {
   const [meetingOpen, setMeetingOpen] = useState(false);
 
   function handleSchedule() {
-    if (match.calendly_url) {
-      window.open(match.calendly_url, "_blank", "noopener,noreferrer");
+    if (match.person.calendly_url) {
+      window.open(match.person.calendly_url, "_blank", "noopener,noreferrer");
     }
   }
 
@@ -301,7 +304,16 @@ function MatchCard({ match, currentUser }) {
             </Button>
           </Link>
           <BuilderNetworkLinks builder={match.person} className="justify-end" />
-          {match.calendly_url && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full gap-1.5"
+            onClick={() => setMeetingOpen(true)}
+          >
+            <Calendar className="h-4 w-4" aria-hidden="true" />
+            Request Meeting
+          </Button>
+          {match.person.calendly_url && (
             <Button
               size="sm"
               className="w-full gap-1.5"
@@ -309,11 +321,17 @@ function MatchCard({ match, currentUser }) {
               aria-label={`Schedule a meeting with ${match.person.name}`}
             >
               <Calendar className="h-4 w-4" aria-hidden="true" />
-              Schedule Meeting
+              Book via Calendly
             </Button>
           )}
         </div>
       </CardContent>
+      <MeetingRequestDialog
+        open={meetingOpen}
+        onOpenChange={setMeetingOpen}
+        fromUser={currentUser}
+        toBuilder={match.person}
+      />
     </Card>
   );
 }

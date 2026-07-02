@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import useCurrentUser from "../hooks/useCurrentUser";
 import { useRef } from "react";
+import { awardXP } from "@/lib/xp-system";
 
 const suggestedSkills = ["React", "Node.js", "Python", "AI/ML", "Design", "Backend", "Frontend", "Mobile", "Data", "DevOps"];
 
@@ -51,6 +52,11 @@ export default function CreateProject() {
         status: "looking_for_team",
         team_size: 1,
         image_url,
+      });
+
+      await awardXP(user.email, "project_created", {
+        project_title: title.trim(),
+        skills_needed: skills,
       });
 
       navigate("/co-build");

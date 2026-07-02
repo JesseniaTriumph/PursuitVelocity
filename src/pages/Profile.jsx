@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import useCurrentUser from "../hooks/useCurrentUser";
 import { motion } from "framer-motion";
 import PersonaInsightsPanel from "../components/PersonaInsightsPanel";
+import XPProgressBar from "../components/XPProgressBar";
 import {
   fetchBuilderDirectory,
   findBuilderByIdentifier,
@@ -337,6 +338,12 @@ export default function Profile() {
             )}
           </div>
         </div>
+
+        {isOwnProfile && currentUser?.email && (
+          <div className="mt-4 p-3 rounded-2xl border bg-card">
+            <XPProgressBar userEmail={currentUser.email} />
+          </div>
+        )}
       </div>
 
       {/* ── Skills ──────────────────────────────────────────────────── */}

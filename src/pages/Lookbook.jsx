@@ -155,6 +155,21 @@ function LookbookDirectory() {
           />
         </div>
 
+        {filteredBuilders.length === 0 && (
+          <div className="text-center py-16">
+            <p className="text-muted-foreground text-sm">
+              {search.trim() ? "No builders match your search." : "No builder profiles yet."}
+            </p>
+            {search.trim() && (
+              <button
+                onClick={() => setSearch("")}
+                className="mt-3 text-xs text-primary font-medium hover:underline"
+              >
+                Clear search
+              </button>
+            )}
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredBuilders.map((builder) => (
             <Card key={builder.id} className="card-interactive">
@@ -439,13 +454,17 @@ function LookbookProfile({ id }) {
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
             Skills
           </h2>
-          <div className="flex flex-wrap gap-2">
-            {profile.skills.map((skill) => (
-              <Badge key={skill} variant="secondary" className="text-sm px-3 py-1 rounded-full">
-                {skill}
-              </Badge>
-            ))}
-          </div>
+          {profile.skills.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {profile.skills.map((skill) => (
+                <Badge key={skill} variant="secondary" className="text-sm px-3 py-1 rounded-full">
+                  {skill}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No skills listed yet.</p>
+          )}
           {profile.workTypes?.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">
               {profile.workTypes.map((type) => (

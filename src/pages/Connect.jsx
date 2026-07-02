@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import UserAvatar from "../components/UserAvatar";
 import BuilderNetworkLinks from "../components/BuilderNetworkLinks";
+import MeetingRequestDialog from "../components/MeetingRequestDialog";
 import { cn } from "@/lib/utils";
 import useCurrentUser from "../hooks/useCurrentUser";
 import {
@@ -94,33 +95,23 @@ export default function Connect() {
   async function toggleRsvp(eventId) {
     if (!user?.email || busyEventId) return;
 
-    setBusyEventId(eventId);
-    try {
-      const existing = rsvps.find((rsvp) => rsvp.event_id === eventId);
-      const currentEvent = events.find((event) => event.id === eventId);
-      const currentCount = currentEvent?.rsvp_count || 0;
+    const existing = rsvps.find((rsvp) => rsvp.event_id === eventId);
+    const currentEvent = events.find((event) => event.id === eventId);
+    const currentCount = currentEvent?.rsvp_count || 0;
 
-      if (existing) {
-        await base44.entities.RSVP.delete(existing.id);
-        await base44.entities.Event.update(eventId, { rsvp_count: Math.max(0, currentCount - 1) });
-        setRsvps((prev) => prev.filter((rsvp) => rsvp.id !== existing.id));
-        setEvents((prev) =>
-          prev.map((event) =>
-            event.id === eventId
-              ? { ...event, rsvp_count: Math.max(0, (event.rsvp_count || 0) - 1) }
-              : event
-          )
-        );
-        return;
-      }
-
-      const created = await base44.entities.RSVP.create({
-        event_id: eventId,
-        user_email: user.email,
-        user_name: user.full_name || "Anonymous",
-      });
-      await base44.entities.Event.update(eventId, { rsvp_count: currentCount + 1 });
-      setRsvps((prev) => [...prev, created]);
+    // Optimistic update — reflect change immediately in UI
+    if (existing) {
+      setRsvps((prev) => prev.filter((rsvp) => rsvp.id !== existing.id));
+      setEvents((prev) =>
+        prev.map((event) =>
+          event.id === eventId
+            ? { ...event, rsvp_count: Math.max(0, (event.rsvp_count || 0) - 1) }
+            : event
+        )
+      );
+    } else {
+      const optimisticRsvp = { id: `optimistic-${eventId}`, event_id: eventId, user_email: user.email };
+      setRsvps((prev) => [...prev, optimisticRsvp]);
       setEvents((prev) =>
         prev.map((event) =>
           event.id === eventId
@@ -128,6 +119,46 @@ export default function Connect() {
             : event
         )
       );
+    }
+
+    setBusyEventId(eventId);
+    try {
+      if (existing) {
+        await base44.entities.RSVP.delete(existing.id);
+        await base44.entities.Event.update(eventId, { rsvp_count: Math.max(0, currentCount - 1) });
+      } else {
+        const created = await base44.entities.RSVP.create({
+          event_id: eventId,
+          user_email: user.email,
+          user_name: user.full_name || "Anonymous",
+        });
+        await base44.entities.Event.update(eventId, { rsvp_count: currentCount + 1 });
+        // Replace optimistic record with real one
+        setRsvps((prev) =>
+          prev.map((rsvp) => (rsvp.id === `optimistic-${eventId}` ? created : rsvp))
+        );
+      }
+    } catch {
+      // Rollback on failure
+      if (existing) {
+        setRsvps((prev) => [...prev, existing]);
+        setEvents((prev) =>
+          prev.map((event) =>
+            event.id === eventId
+              ? { ...event, rsvp_count: currentCount }
+              : event
+          )
+        );
+      } else {
+        setRsvps((prev) => prev.filter((rsvp) => rsvp.id !== `optimistic-${eventId}`));
+        setEvents((prev) =>
+          prev.map((event) =>
+            event.id === eventId
+              ? { ...event, rsvp_count: currentCount }
+              : event
+          )
+        );
+      }
     } finally {
       setBusyEventId(null);
     }
@@ -171,7 +202,7 @@ export default function Connect() {
               key={type}
               onClick={() => setActiveFilter(type)}
               className={cn(
-                "shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
+                "shrink-0 px-3 py-2.5 min-h-[44px] flex items-center rounded-full text-xs font-medium transition-colors",
                 activeFilter === type
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -214,7 +245,7 @@ export default function Connect() {
           </p>
         ) : (
           openMeetings.map((builder) => (
-            <OpenMeetingCard key={builder.id} builder={builder} />
+            <OpenMeetingCard key={builder.id} builder={builder} currentUser={user} />
           ))
         )}
       </section>
@@ -308,8 +339,9 @@ function EventCard({ event, hasRsvp, onRsvp, busy }) {
   );
 }
 
-function OpenMeetingCard({ builder }) {
+function OpenMeetingCard({ builder, currentUser }) {
   const profilePath = getBuilderProfilePath(builder);
+  const [meetingOpen, setMeetingOpen] = useState(false);
 
   return (
     <Card>
@@ -365,7 +397,24 @@ function OpenMeetingCard({ builder }) {
           )}
         </div>
         <BuilderNetworkLinks builder={builder} className="mt-3" />
+        {currentUser?.email && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full rounded-xl gap-1.5 mt-3"
+            onClick={() => setMeetingOpen(true)}
+          >
+            <Calendar className="w-3.5 h-3.5" aria-hidden="true" />
+            Request Meeting
+          </Button>
+        )}
       </CardContent>
+      <MeetingRequestDialog
+        open={meetingOpen}
+        onOpenChange={setMeetingOpen}
+        fromUser={currentUser}
+        toBuilder={builder}
+      />
     </Card>
   );
 }

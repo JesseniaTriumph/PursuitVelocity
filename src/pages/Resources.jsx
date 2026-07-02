@@ -48,6 +48,7 @@ export default function Resources() {
   const [category, setCategory] = useState("All");
   const [addOpen, setAddOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [likingId, setLikingId] = useState(null);
 
   useEffect(() => {
     loadResources();
@@ -79,14 +80,14 @@ export default function Resources() {
   }
 
   async function toggleLike(postId) {
-    if (!user?.email) return;
+    if (!user?.email || likingId === postId) return;
 
     const existing = likes.find((like) => like.post_id === postId);
     const currentTutorial = tutorials.find((tutorial) => tutorial.id === postId);
     const currentCount = currentTutorial?.likes_count || 0;
 
+    // Optimistic update
     if (existing) {
-      await base44.entities.Like.delete(existing.id);
       setLikes((prev) => prev.filter((like) => like.id !== existing.id));
       setTutorials((prev) =>
         prev.map((tutorial) =>
@@ -95,28 +96,50 @@ export default function Resources() {
             : tutorial
         )
       );
-      await base44.entities.Post.update(postId, {
-        likes_count: Math.max(0, currentCount - 1),
-      });
-      return;
+    } else {
+      const optimisticLike = { id: `optimistic-${postId}`, post_id: postId, user_email: user.email };
+      setLikes((prev) => [...prev, optimisticLike]);
+      setTutorials((prev) =>
+        prev.map((tutorial) =>
+          tutorial.id === postId
+            ? { ...tutorial, likes_count: (tutorial.likes_count || 0) + 1 }
+            : tutorial
+        )
+      );
     }
 
-    const newLike = await base44.entities.Like.create({
-      post_id: postId,
-      user_email: user.email,
-    });
-
-    setLikes((prev) => [...prev, newLike]);
-    setTutorials((prev) =>
-      prev.map((tutorial) =>
-        tutorial.id === postId
-          ? { ...tutorial, likes_count: (tutorial.likes_count || 0) + 1 }
-          : tutorial
-      )
-    );
-    await base44.entities.Post.update(postId, {
-      likes_count: currentCount + 1,
-    });
+    setLikingId(postId);
+    try {
+      if (existing) {
+        await base44.entities.Like.delete(existing.id);
+        await base44.entities.Post.update(postId, { likes_count: Math.max(0, currentCount - 1) });
+      } else {
+        const newLike = await base44.entities.Like.create({ post_id: postId, user_email: user.email });
+        await base44.entities.Post.update(postId, { likes_count: currentCount + 1 });
+        setLikes((prev) =>
+          prev.map((like) => (like.id === `optimistic-${postId}` ? newLike : like))
+        );
+      }
+    } catch {
+      // Rollback on failure
+      if (existing) {
+        setLikes((prev) => [...prev, existing]);
+        setTutorials((prev) =>
+          prev.map((tutorial) =>
+            tutorial.id === postId ? { ...tutorial, likes_count: currentCount } : tutorial
+          )
+        );
+      } else {
+        setLikes((prev) => prev.filter((like) => like.id !== `optimistic-${postId}`));
+        setTutorials((prev) =>
+          prev.map((tutorial) =>
+            tutorial.id === postId ? { ...tutorial, likes_count: currentCount } : tutorial
+          )
+        );
+      }
+    } finally {
+      setLikingId(null);
+    }
   }
 
   const filtered = tutorials.filter((tutorial) => {
@@ -175,7 +198,7 @@ export default function Resources() {
             key={cat}
             onClick={() => setCategory(cat)}
             className={cn(
-              "shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring",
+              "shrink-0 px-3 py-2.5 min-h-[44px] flex items-center rounded-full text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring",
               category === cat
                 ? "bg-primary text-primary-foreground"
                 : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
@@ -213,6 +236,7 @@ export default function Resources() {
               tutorial={tutorial}
               isLiked={likes.some((like) => like.post_id === tutorial.id)}
               onLike={toggleLike}
+              busy={likingId === tutorial.id}
             />
           ))}
         </div>
@@ -228,7 +252,7 @@ export default function Resources() {
   );
 }
 
-function TutorialCard({ tutorial, isLiked, onLike }) {
+function TutorialCard({ tutorial, isLiked, onLike, busy }) {
   return (
     <Card className="card-interactive flex flex-col">
       <CardContent className="p-5 flex flex-col flex-1">
@@ -292,8 +316,9 @@ function TutorialCard({ tutorial, isLiked, onLike }) {
               onClick={() => onLike(tutorial.id)}
               aria-label={isLiked ? "Unlike" : "Like this tutorial"}
               aria-pressed={isLiked}
+              disabled={busy}
               className={cn(
-                "flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-colors",
+                "flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-colors disabled:opacity-50",
                 isLiked
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:bg-muted"
