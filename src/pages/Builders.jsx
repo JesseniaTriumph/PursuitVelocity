@@ -21,6 +21,8 @@ import {
 import { cn } from "@/lib/utils";
 import UserAvatar from "../components/UserAvatar";
 import BuilderNetworkLinks from "../components/BuilderNetworkLinks";
+import MeetingRequestDialog from "../components/MeetingRequestDialog";
+import useCurrentUser from "../hooks/useCurrentUser";
 import {
   buildBuilderRole,
   fetchBuilderDirectory,
@@ -35,6 +37,7 @@ const AVAILABILITY_LABELS = {
 };
 
 export default function Builders() {
+  const { user } = useCurrentUser();
   const [builders, setBuilders] = useState([]);
   const [currentUserEmail, setCurrentUserEmail] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -161,7 +164,7 @@ export default function Builders() {
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {filtered.map((builder) => (
-            <BuilderCard key={builder.id} builder={builder} />
+            <BuilderCard key={builder.id} builder={builder} currentUser={user} />
           ))}
         </div>
       )}
@@ -169,10 +172,11 @@ export default function Builders() {
   );
 }
 
-function BuilderCard({ builder }) {
+function BuilderCard({ builder, currentUser }) {
   const avail = AVAILABILITY_LABELS[builder.availability] || AVAILABILITY_LABELS.selective;
   const profilePath = getBuilderProfilePath(builder);
   const lookbookPath = getBuilderLookbookPath(builder);
+  const [meetingOpen, setMeetingOpen] = useState(false);
 
   function handleSchedule(event) {
     event.preventDefault();
@@ -261,6 +265,17 @@ function BuilderCard({ builder }) {
             </Button>
           </Link>
           <BuilderNetworkLinks builder={builder} className="justify-end" />
+          {currentUser?.email && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full gap-1.5"
+              onClick={() => setMeetingOpen(true)}
+            >
+              <Calendar className="h-4 w-4" aria-hidden="true" />
+              Request Meeting
+            </Button>
+          )}
           {builder.calendly_url && (
             <Button
               size="sm"
@@ -274,6 +289,12 @@ function BuilderCard({ builder }) {
           )}
         </div>
       </CardContent>
+      <MeetingRequestDialog
+        open={meetingOpen}
+        onOpenChange={setMeetingOpen}
+        fromUser={currentUser}
+        toBuilder={builder}
+      />
     </Card>
   );
 }

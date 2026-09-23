@@ -1,7 +1,14 @@
-import { Heart, MessageCircle, Bookmark, CheckCircle2, HelpCircle } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, CheckCircle2, HelpCircle, MoreHorizontal, Trash2, Archive, Flag } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import moment from "moment";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const postTypeConfig = {
   progress: { label: "Progress", color: "bg-accent/10 text-primary" },
@@ -11,7 +18,8 @@ const postTypeConfig = {
   update: { label: "Update", color: "bg-muted text-muted-foreground" },
 };
 
-export default function BuildUpdateCard({ post, currentUserEmail, onLikeToggle, onSaveToggle, isLiked, isSaved }) {
+export default function BuildUpdateCard({ post, currentUserEmail, onLikeToggle, onSaveToggle, onDelete, onArchive, isLiked, isSaved }) {
+  const isOwn = post.author_email === currentUserEmail;
   const timeAgo = moment(post.created_date).fromNow();
   const typeConfig = postTypeConfig[post.post_type] || postTypeConfig.update;
 
@@ -55,6 +63,37 @@ export default function BuildUpdateCard({ post, currentUserEmail, onLikeToggle, 
         <span className={`text-[10px] px-2.5 py-1 rounded-full font-medium uppercase tracking-wide ${typeConfig.color}`}>
           {typeConfig.label}
         </span>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" aria-label="Post options">
+              <MoreHorizontal className="w-4 h-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            {isOwn && (
+              <>
+                <DropdownMenuItem
+                  className="text-muted-foreground gap-2"
+                  onClick={() => onArchive?.(post.id)}
+                >
+                  <Archive className="w-4 h-4" /> Archive post
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive gap-2"
+                  onClick={() => onDelete?.(post.id)}
+                >
+                  <Trash2 className="w-4 h-4" /> Delete post
+                </DropdownMenuItem>
+              </>
+            )}
+            {!isOwn && (
+              <DropdownMenuItem className="text-muted-foreground gap-2">
+                <Flag className="w-4 h-4" /> Report post
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Body */}

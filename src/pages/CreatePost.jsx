@@ -5,6 +5,8 @@ import { Image, X, Hash, Loader2, Sparkles, Zap, Target, HelpCircle, CheckCircle
 import { Button } from "@/components/ui/button";
 import useCurrentUser from "../hooks/useCurrentUser";
 import { motion, AnimatePresence } from "framer-motion";
+import { screenContent } from "@/lib/ai-guardrails";
+import { awardXP } from "@/lib/xp-system";
 
 const postTypes = [
   { id: "progress", label: "Progress", icon: Sparkles },
@@ -63,6 +65,18 @@ export default function CreatePost() {
 
   const handleSubmit = async () => {
     if (!content.trim() || !user) return;
+
+    // Content safety screen
+    const safety = screenContent(content + " " + completed + " " + needed);
+    if (!safety.allowed) {
+      alert(safety.reason);
+      return;
+    }
+    if (safety.warning) {
+      const proceed = window.confirm(safety.warning + "\n\nPost anyway?");
+      if (!proceed) return;
+    }
+
     setSubmitting(true);
 
     let image_url = null;
@@ -87,6 +101,10 @@ export default function CreatePost() {
       likes_count: 0,
       comments_count: 0,
     });
+
+    // Award XP for posting
+    const xpEvent = postType === "milestone" ? "milestone_posted" : "post_created";
+    await awardXP(user.email, xpEvent, { post_type: postType });
 
     navigate("/");
   };

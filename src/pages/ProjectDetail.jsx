@@ -5,12 +5,14 @@ import { ArrowLeft, Users, Send, Loader2, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import useCurrentUser from "../hooks/useCurrentUser";
 import moment from "moment";
+import BuildPlanner from "../components/BuildPlanner";
 
 export default function ProjectDetail() {
   const { id } = useParams();
   const { user } = useCurrentUser();
   const [project, setProject] = useState(null);
   const [requests, setRequests] = useState([]);
+  const [milestones, setMilestones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -18,12 +20,14 @@ export default function ProjectDetail() {
 
   useEffect(() => {
     const load = async () => {
-      const [projectData, requestData] = await Promise.all([
+      const [projectData, requestData, milestoneData] = await Promise.all([
         base44.entities.Project.filter({ id }),
         base44.entities.TeamRequest.filter({ project_id: id }),
+        base44.entities.Milestone.filter({ project_id: id }).catch(() => []),
       ]);
       setProject(projectData[0] || null);
       setRequests(requestData);
+      setMilestones(milestoneData);
       if (user?.email) {
         setHasRequested(requestData.some((r) => r.user_email === user.email));
       }
@@ -63,6 +67,11 @@ export default function ProjectDetail() {
   }
 
   const isOwner = user?.email === project.owner_email;
+
+  async function refreshMilestones() {
+    const milestoneData = await base44.entities.Milestone.filter({ project_id: id }).catch(() => []);
+    setMilestones(milestoneData);
+  }
 
   return (
     <div className="px-4 py-4 space-y-5">
@@ -108,6 +117,20 @@ export default function ProjectDetail() {
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Users className="w-4 h-4" />
           <span>{project.team_size || 1} / {project.max_team_size || 5} members</span>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Build Plan
+        </h3>
+        <div className="p-4 bg-muted/40 rounded-2xl">
+          <BuildPlanner
+            project={project}
+            currentUserEmail={user?.email}
+            milestones={milestones}
+            onUpdate={refreshMilestones}
+          />
         </div>
       </div>
 
