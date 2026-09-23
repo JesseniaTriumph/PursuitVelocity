@@ -49,3 +49,4 @@ out/
 credentials.json
 secrets.json
 *.p12
+client_secret*.json
